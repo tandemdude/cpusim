@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2024-present tandemdude
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,11 +17,47 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from cpusim.instructions.base import Instruction
+from cpusim.types import Int16
 
 
-class Move(Instruction):
-    __slots__ = ()
+class ALU:
+    __slots__ = ("negative", "positive", "overflow", "carry", "zero")
 
-    def __call__(self, *args, **kwargs) -> None:
+    def __init__(self) -> None:
+        self.negative: bool = False
+        self.positive: bool = False
+        self.overflow: bool = False
+        self.carry: bool = False
+        self.zero: bool = False
+
+    def _set_flags(self, n1: Int16, n2: Int16 | None, result: int) -> None:
+        self.carry = result > 0x7fff or result < -0x8000
+        self.negative = result < 0
+        self.positive = result > 0
+        self.zero = result == 0
+
+    def add(self, n1: Int16, n2: Int16) -> Int16:
+        result = n1 + n2
+        self._set_flags(n1, n2, result)
+        return Int16(result & 0xffff)
+
+    def sub(self, n1: Int16, n2: Int16) -> Int16:
+        ...
+
+    def and_(self, n1: Int16, n2: Int16) -> Int16:
+        ...
+
+    def rol(self, n: Int16) -> Int16:
+        ...
+
+    def xor(self, n1: Int16, n2: Int16) -> Int16:
+        ...
+
+    def or_(self, n1: Int16, n2: Int16) -> Int16:
+        ...
+
+    def ror(self, n: Int16) -> Int16:
+        ...
+
+    def asl(self, n: Int16) -> Int16:
         ...

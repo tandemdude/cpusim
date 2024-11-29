@@ -1,23 +1,70 @@
+# Copyright (c) 2024-present tandemdude
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+from __future__ import annotations
+
+import typing as t
+
 import abc
-import dataclasses
+import enum
+
+if t.TYPE_CHECKING:
+    from cpusim import simulator
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
-class InstructionData:
-    opcode: int
-    operands: list[int]
+class AddressingMode(enum.Enum):
+    UNKNOWN = enum.auto()
+    REGISTER = enum.auto()
+    REGISTER_INDIRECT = enum.auto()
+    IMMEDIATE = enum.auto()
+    ABSOLUTE = enum.auto()
+    DIRECT = enum.auto()
+
+
+class RegisterModeArgs(t.NamedTuple):
+    register_1: int
+    register_2: int
+
+
+RegisterIndirectModeArgs = RegisterModeArgs
+
+
+class ImmediateModeArgs(t.NamedTuple):
+    register: int
+    constant: int
+
+
+class DirectModeArgs(t.NamedTuple):
+    constant: int
+
+
+AbsoluteModeArgs = DirectModeArgs
 
 
 class Instruction(abc.ABC):
-    __slots__ = ("_data",)
-
-    def __init__(self, data: InstructionData) -> None:
-        self._data = data
+    __slots__ = ()
 
     @property
-    def data(self) -> InstructionData:
-        return self._data
+    @abc.abstractmethod
+    def addressing_mode(self) -> AddressingMode:
+        pass
 
     @abc.abstractmethod
-    def __call__(self, *args, **kwargs) -> None:
-        ...
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+        pass

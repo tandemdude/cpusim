@@ -17,6 +17,34 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""PLACEHOLDER"""
 
-__version__ = "0.0.1"
+
+# TODO - consider bounds checking
+class ProgramCounter:
+    __slots__ = ("_val", "_locked")
+
+    def __init__(self) -> None:
+        self._val = 0
+        self._locked = False
+
+    @property
+    def value(self) -> int:
+        return self._val
+
+    def incr(self) -> None:
+        if self._locked:
+            return
+
+        self._val += 1
+
+    def set(self, val: int) -> None:
+        if self._locked:
+            return
+
+        self._val = val
+
+    def lock(self) -> None:
+        self._locked = True
+
+    def unlock(self) -> None:
+        self._locked = False

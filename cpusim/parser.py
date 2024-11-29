@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2024-present tandemdude
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -36,6 +35,7 @@ _OPCODE_REPRS: dict[int, str] = {
     0b1100: "call",
 }
 
+
 def opcode_repr(op: int) -> str:
     if op in _OPCODE_REPRS:
         return _OPCODE_REPRS[op]
@@ -44,5 +44,4 @@ def opcode_repr(op: int) -> str:
     return "unknown instruction"
 
 
-def parse_dat_file(content: bytes) -> list[Instruction]:
-    ...
+def parse_dat_file(content: bytes) -> list[Instruction]: ...

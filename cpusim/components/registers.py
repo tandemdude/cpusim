@@ -17,6 +17,30 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""PLACEHOLDER"""
+import collections
 
-__version__ = "0.0.1"
+
+class Registers:
+    __slots__ = (
+        "_register_limit",
+        "_values",
+    )
+
+    def __init__(self, register_limit: int) -> None:
+        self._register_limit = register_limit
+        self._values = collections.defaultdict(lambda: 0)
+
+    def get(self, idx: int) -> int:
+        if idx >= self._register_limit:
+            raise ValueError("Index out of range")
+
+        return self._values[idx]
+
+    def set(self, idx: int, val: int) -> None:
+        if idx >= self._register_limit:
+            raise ValueError("Index out of range")
+
+        if val > 0xFFFF:
+            raise ValueError("Value out of range")
+
+        self._values[idx] = val

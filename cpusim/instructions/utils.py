@@ -17,6 +17,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""PLACEHOLDER"""
-
-__version__ = "0.0.1"
+def signed_extend_8_to_16_bits(value: int) -> int:
+    # only accept 8 bit values
+    value = value & 0xff
+    # shift the sign bit 8 places left, and concatenate the remaining 7 bits
+    return ((value << 8) & 0x8000) | value & 0x7f

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2024-present tandemdude
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,13 +17,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import dataclasses
-
-
-@dataclasses.dataclass(slots=True)
-class Flags:
-    negative: bool = False
-    positive: bool = False
-    overflow: bool = False
-    carry: bool = False
-    zero: bool = False

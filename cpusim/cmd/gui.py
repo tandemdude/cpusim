@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2024-present tandemdude
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,10 +17,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import collections
-import dataclasses
-
-
-@dataclasses.dataclass
-class Registers:
-    values: dict[int, int] = dataclasses.field(default_factory=lambda: collections.defaultdict(lambda: 0))
