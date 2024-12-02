@@ -74,6 +74,6 @@ def run_dis(args: DisArgs) -> None:
         "=========================",
         "LINE | HEX  | INSTRUCTION",
         "=========================",
-        decode_memory(cpu)
+        decode_memory(cpu),
     ]
     print("\n".join(output))

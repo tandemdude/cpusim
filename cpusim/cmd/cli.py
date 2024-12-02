@@ -20,9 +20,10 @@
 import time
 import typing as t
 
-from cpusim import parser, simulator
-from cpusim.instructions import utils
+from cpusim import parser
+from cpusim import simulator
 from cpusim.cmd import dis
+from cpusim.instructions import utils
 
 
 class CliArgs(t.NamedTuple):
@@ -51,12 +52,21 @@ def run_cli(args: CliArgs) -> None:
     milliseconds = microseconds / 1000
     seconds = milliseconds / 1000
 
-    final_elapsed = f"{microseconds:.3f} µs" if milliseconds < 1 else f"{milliseconds:.3f} ms" if seconds < 1 else f"{seconds:.3f} s"
+    final_elapsed = (
+        f"{microseconds:.3f} µs"
+        if milliseconds < 1
+        else f"{milliseconds:.3f} ms"
+        if seconds < 1
+        else f"{seconds:.3f} s"
+    )
 
     register_state_lines = [
         "| REGISTER STATE |",
         "==================",
-        *(f"{utils.register_repr(n)} : {cpu.registers.get(n).unsigned_value:04x}".ljust(18, " ") for n in range(cpu.registers._register_limit)),
+        *(
+            f"{utils.register_repr(n)} : {cpu.registers.get(n).unsigned_value:04x}".ljust(18, " ")
+            for n in range(cpu.registers._register_limit)
+        ),
     ]
 
     # 18
@@ -77,18 +87,6 @@ def run_cli(args: CliArgs) -> None:
         "",
         *register_state_lines,
         "",
-        # "| FLAG STATE |",
-        # "==============",
-        # " NEGATIVE : " + str(cpu.alu.negative)[0],
-        # " POSITIVE : " + str(cpu.alu.positive)[0],
-        # " OVERFLOW : " + str(cpu.alu.overflow)[0],
-        # " CARRY    : " + str(cpu.alu.carry)[0],
-        # " ZERO     : " + str(cpu.alu.zero)[0],
-        # "",
-        # "| REGISTER STATE |",
-        # "==================",
-        # *(f" {utils.register_repr(n)} : {cpu.registers.get(n).unsigned_value:04x}"  for n in range(cpu.registers._register_limit)),
-        # "",
         "|     MEMORY STATE      |",
         "=========================",
         "LINE | HEX  | INSTRUCTION",

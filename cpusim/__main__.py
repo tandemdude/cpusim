@@ -18,9 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import argparse
-import sys
 
-from cpusim.cmd import dis, cli
+from cpusim.cmd import cli
+from cpusim.cmd import dis
 
 root_parser = argparse.ArgumentParser()
 root_subparsers = root_parser.add_subparsers(dest="command")
@@ -38,7 +38,12 @@ cli_parser.add_argument(
     "--steps", "-s", action="store", nargs=1, type=int, help="the number of steps (instructions) to simulate"
 )
 cli_parser.add_argument(
-    "--breakpoints", "-b", action="store", nargs="*", type=int, help="line numbers where breakpoints will be placed - implicitly enables interactive mode"
+    "--breakpoints",
+    "-b",
+    action="store",
+    nargs="*",
+    type=int,
+    help="line numbers where breakpoints will be placed - implicitly enables interactive mode",
 )
 cli_parser.add_argument(
     "--interactive",
