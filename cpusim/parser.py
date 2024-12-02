@@ -17,31 +17,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from cpusim.instructions.base import Instruction
+def parse_dat_file(file: str) -> list[int]:
+    with open(file) as fp:
+        dat_file_contents = fp.read()
 
-_OPCODE_REPRS: dict[int, str] = {
-    0b0000: "move",
-    0b0001: "add",
-    0b0010: "sub",
-    0b0011: "and",
-    0b0100: "load",
-    0b0101: "store",
-    0b0110: "addm",
-    0b0111: "subm",
-    0b1000: "jump",
-    0b1001: "jumpz",
-    0b1010: "jumpnz",
-    0b1011: "jumpc",
-    0b1100: "call",
-}
+    raw_instructions: list[int] = []
+    for line in dat_file_contents.splitlines():
+        if not line:
+            continue
 
+        parts = line.split()
+        if len(parts) < 2:
+            continue
 
-def opcode_repr(op: int) -> str:
-    if op in _OPCODE_REPRS:
-        return _OPCODE_REPRS[op]
+        raw_instructions.append(int(parts[1], 2))
 
-    # TODO - 0b1111 + (...) opcodes
-    return "unknown instruction"
-
-
-def parse_dat_file(content: bytes) -> list[Instruction]: ...
+    return raw_instructions

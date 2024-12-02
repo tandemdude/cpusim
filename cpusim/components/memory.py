@@ -17,28 +17,26 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from cpusim.types import Int16
 
 
 class Memory:
     __slots__ = ("_data",)
 
-    def __init__(self, initial_data: list[int]) -> None:
+    def __init__(self, initial_data: list[int], max_size: int = 4096) -> None:
         data = list(initial_data)
-        self._data: list[int] = data[:4096]
-        if len(data) < 4096:
-            self._data.extend([0 for _ in range(4096 - len(data))])
+        self._data: list[Int16] = [Int16(v) for v in data[:max_size]]
+        if len(data) < max_size:
+            self._data.extend([Int16(0) for _ in range(max_size - len(data))])
 
-    def get(self, address: int) -> int:
+    def get(self, address: int) -> Int16:
         if address >= len(self._data):
             raise ValueError("Address out of bounds")
 
         return self._data[address]
 
-    def put(self, address: int, value: int) -> None:
+    def set(self, address: int, value: Int16) -> None:
         if address >= len(self._data):
             raise ValueError("Address out of bounds")
-
-        if value > 0xFFFF:
-            raise ValueError("Value out of bounds")
 
         self._data[address] = value

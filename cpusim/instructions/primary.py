@@ -17,17 +17,26 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
+
 import typing as t
 
 from cpusim.instructions import base
 from cpusim.instructions import utils
+from cpusim.types import Int16
 
 if t.TYPE_CHECKING:
     from cpusim import simulator
 
 
 class Move(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.IMMEDIATE
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.ImmediateModeArgs(*args)
+        return f"move {utils.register_repr(args_.register)} {hex(args_.constant)}"
 
     def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
         args_ = base.ImmediateModeArgs(*args)
@@ -35,63 +44,124 @@ class Move(base.Instruction):
 
 
 class Add(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.IMMEDIATE
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.ImmediateModeArgs(*args)
+        return f"add {utils.register_repr(args_.register)} {hex(args_.constant)}"
 
     def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
         args_ = base.ImmediateModeArgs(*args)
 
-        # TODO - check if 16 bit signed operations work in python !
-        new_value = cpu.registers.get(args_.register) + utils.signed_extend_8_to_16_bits(args_.constant)
-        cpu.registers.set(args_.register, new_value)
-
-        # TODO - set flags
+        result = cpu.alu.add(cpu.registers.get(args_.register), utils.signed_extend_8_to_16_bits(args_.constant))
+        cpu.registers.set(args_.register, result)
 
 
 class Sub(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.IMMEDIATE
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.ImmediateModeArgs(*args)
+        return f"sub {utils.register_repr(args_.register)} {hex(args_.constant)}"
 
     def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
         args_ = base.ImmediateModeArgs(*args)
 
-        # TODO - check if 16 bit signed operations work in python !
-        new_value = cpu.registers.get(args_.register) - utils.signed_extend_8_to_16_bits(args_.constant)
-        cpu.registers.set(args_.register, new_value)
-
-        # TODO - set flags
+        result = cpu.alu.sub(cpu.registers.get(args_.register), utils.signed_extend_8_to_16_bits(args_.constant))
+        cpu.registers.set(args_.register, result)
 
 
 class And(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.IMMEDIATE
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None: pass
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.ImmediateModeArgs(*args)
+        return f"and {utils.register_repr(args_.register)} {hex(args_.constant)}"
+
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+        args_ = base.ImmediateModeArgs(*args)
+
+        # this constant is not sign extended
+        result = cpu.alu.and_(cpu.registers.get(args_.register), Int16(args_.constant))
+        cpu.registers.set(args_.register, result)
 
 
 class Load(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.ABSOLUTE
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None: pass
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.AbsoluteModeArgs(*args)
+        return f"load RA {hex(args_.constant)}"
+
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+        args_ = base.AbsoluteModeArgs(*args)
+
+        cpu.registers.set(0, cpu.memory.get(args_.constant))
 
 
 class Store(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.ABSOLUTE
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None: pass
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.AbsoluteModeArgs(*args)
+        return f"store RA {hex(args_.constant)}"
+
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+        args_ = base.AbsoluteModeArgs(*args)
+
+        cpu.memory.set(args_.constant, cpu.registers.get(0))
 
 
 class AddM(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.ABSOLUTE
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None: pass
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.AbsoluteModeArgs(*args)
+        return f"addm RA {hex(args_.constant)}"
+
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+        args_ = base.AbsoluteModeArgs(*args)
+
+        result = cpu.alu.add(cpu.registers.get(0), cpu.memory.get(args_.constant))
+        cpu.registers.set(0, result)
 
 
 class SubM(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.ABSOLUTE
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None: pass
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.AbsoluteModeArgs(*args)
+        return f"subm RA {hex(args_.constant)}"
+
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+        args_ = base.AbsoluteModeArgs(*args)
+
+        result = cpu.alu.sub(cpu.registers.get(0), cpu.memory.get(args_.constant))
+        cpu.registers.set(0, result)
 
 
 class JumpU(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.DIRECT
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.DirectModeArgs(*args)
+        return f"jumpu {hex(args_.constant)}"
 
     def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
         args_ = base.DirectModeArgs(*args)
@@ -101,12 +171,18 @@ class JumpU(base.Instruction):
 
 
 class JumpZ(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.DIRECT
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.DirectModeArgs(*args)
+        return f"jumpz {hex(args_.constant)}"
 
     def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
         args_ = base.DirectModeArgs(*args)
 
-        if not cpu.flags.zero:
+        if not cpu.alu.zero:
             return
 
         cpu.pc.set(args_.constant)
@@ -114,12 +190,18 @@ class JumpZ(base.Instruction):
 
 
 class JumpNZ(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.DIRECT
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.DirectModeArgs(*args)
+        return f"jumpnz {hex(args_.constant)}"
 
     def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
         args_ = base.DirectModeArgs(*args)
 
-        if cpu.flags.zero:
+        if cpu.alu.zero:
             return
 
         cpu.pc.set(args_.constant)
@@ -127,12 +209,18 @@ class JumpNZ(base.Instruction):
 
 
 class JumpC(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.DIRECT
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.DirectModeArgs(*args)
+        return f"jumpc {hex(args_.constant)}"
 
     def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
         args_ = base.DirectModeArgs(*args)
 
-        if not cpu.flags.carry:
+        if not cpu.alu.carry:
             return
 
         cpu.pc.set(args_.constant)
@@ -140,13 +228,42 @@ class JumpC(base.Instruction):
 
 
 class Call(base.Instruction):
+    __slots__ = ()
+
     addressing_mode = base.AddressingMode.DIRECT
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None: pass
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.DirectModeArgs(*args)
+        return f"call {hex(args_.constant)}"
+
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+        raise NotImplementedError("CALL is unimplemented")
+
+
+class Or(base.Instruction):
+    __slots__ = ()
+
+    addressing_mode = base.AddressingMode.IMMEDIATE
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.ImmediateModeArgs(*args)
+        return f"or {utils.register_repr(args_.register)} {hex(args_.constant)}"
+
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+        args_ = base.ImmediateModeArgs(*args)
+
+        result = cpu.alu.or_(cpu.registers.get(args_.register), Int16(args_.constant))
+        cpu.registers.set(args_.register, result)
 
 
 class Xop1(base.Instruction):
-    addressing_mode = base.AddressingMode.UNKNOWN
+    __slots__ = ()
+
+    addressing_mode = base.AddressingMode.IMMEDIATE
+
+    def repr(self, args: tuple[int, ...]) -> str:
+        args_ = base.ImmediateModeArgs(*args)
+        return f"or {utils.register_repr(args_.register)} {hex(args_.constant)}"
 
     def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
         raise NotImplementedError("XOP1 is unimplemented")

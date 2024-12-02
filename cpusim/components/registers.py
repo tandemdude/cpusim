@@ -19,6 +19,8 @@
 # SOFTWARE.
 import collections
 
+from cpusim.types import Int16
+
 
 class Registers:
     __slots__ = (
@@ -28,19 +30,16 @@ class Registers:
 
     def __init__(self, register_limit: int) -> None:
         self._register_limit = register_limit
-        self._values = collections.defaultdict(lambda: 0)
+        self._values: collections.defaultdict[int, Int16] = collections.defaultdict(lambda: Int16(0))
 
-    def get(self, idx: int) -> int:
+    def get(self, idx: int) -> Int16:
         if idx >= self._register_limit:
             raise ValueError("Index out of range")
 
         return self._values[idx]
 
-    def set(self, idx: int, val: int) -> None:
+    def set(self, idx: int, val: Int16) -> None:
         if idx >= self._register_limit:
             raise ValueError("Index out of range")
-
-        if val > 0xFFFF:
-            raise ValueError("Value out of range")
 
         self._values[idx] = val

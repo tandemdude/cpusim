@@ -21,7 +21,7 @@ from cpusim.types import Int16
 
 
 class ALU:
-    __slots__ = ("negative", "positive", "overflow", "carry", "zero")
+    __slots__ = ("carry", "negative", "overflow", "positive", "zero")
 
     def __init__(self) -> None:
         self.negative: bool = False
@@ -30,34 +30,73 @@ class ALU:
         self.carry: bool = False
         self.zero: bool = False
 
-    def _set_flags(self, n1: Int16, n2: Int16 | None, result: int) -> None:
-        self.carry = result > 0x7fff or result < -0x8000
-        self.negative = result < 0
-        self.positive = result > 0
-        self.zero = result == 0
+    def _set_basic_flags(self, result: Int16) -> None:
+        self.negative = result.signed_value < 0
+        self.positive = result.signed_value > 0
+        self.zero = result.signed_value == 0
 
     def add(self, n1: Int16, n2: Int16) -> Int16:
         result = n1 + n2
-        self._set_flags(n1, n2, result)
-        return Int16(result & 0xffff)
+
+        self._set_basic_flags(result)
+        self.carry = result.carry
+        self.overflow = result.overflow
+
+        return result
 
     def sub(self, n1: Int16, n2: Int16) -> Int16:
-        ...
+        result = n1 - n2
+
+        self._set_basic_flags(result)
+        self.carry = False
+        self.overflow = result.overflow
+
+        return result
 
     def and_(self, n1: Int16, n2: Int16) -> Int16:
-        ...
+        result = Int16(n1.unsigned_value & n2.unsigned_value)
+
+        self._set_basic_flags(result)
+        self.carry = self.overflow = False
+
+        return result
 
     def rol(self, n: Int16) -> Int16:
-        ...
+        result = Int16((n.unsigned_value << 1) | (n.unsigned_value >> 15))
+
+        self._set_basic_flags(result)
+        self.carry = self.overflow = False
+
+        return result
 
     def xor(self, n1: Int16, n2: Int16) -> Int16:
-        ...
+        result = Int16(n1.unsigned_value ^ n2.unsigned_value)
+
+        self._set_basic_flags(result)
+        self.carry = self.overflow = False
+
+        return result
 
     def or_(self, n1: Int16, n2: Int16) -> Int16:
-        ...
+        result = Int16(n1.unsigned_value | n2.unsigned_value)
+
+        self._set_basic_flags(result)
+        self.carry = self.overflow = False
+
+        return result
 
     def ror(self, n: Int16) -> Int16:
-        ...
+        result = Int16((n.unsigned_value >> 1) | ((n.unsigned_value & 0x1) << 15))
+
+        self._set_basic_flags(result)
+        self.carry = self.overflow = False
+
+        return result
 
     def asl(self, n: Int16) -> Int16:
-        ...
+        result = Int16((n.unsigned_value << 1) & 0xFFFE)
+
+        self._set_basic_flags(result)
+        self.carry = self.overflow = False
+
+        return result

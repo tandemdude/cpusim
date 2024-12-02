@@ -21,7 +21,7 @@
 
 # TODO - consider bounds checking
 class ProgramCounter:
-    __slots__ = ("_val", "_locked")
+    __slots__ = ("_locked", "_val")
 
     def __init__(self) -> None:
         self._val = 0

@@ -19,10 +19,9 @@
 # SOFTWARE.
 from __future__ import annotations
 
-import typing as t
-
 import abc
 import enum
+import typing as t
 
 if t.TYPE_CHECKING:
     from cpusim import simulator
@@ -60,11 +59,10 @@ AbsoluteModeArgs = DirectModeArgs
 class Instruction(abc.ABC):
     __slots__ = ()
 
-    @property
-    @abc.abstractmethod
-    def addressing_mode(self) -> AddressingMode:
-        pass
+    addressing_mode: t.ClassVar[AddressingMode] = AddressingMode.UNKNOWN
 
     @abc.abstractmethod
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
-        pass
+    def repr(self, args: tuple[int, ...]) -> str: ...
+
+    @abc.abstractmethod
+    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None: ...

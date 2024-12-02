@@ -17,3 +17,83 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import time
+import typing as t
+
+from cpusim import parser, simulator
+from cpusim.instructions import utils
+from cpusim.cmd import dis
+
+
+class CliArgs(t.NamedTuple):
+    file: str
+    n_steps: int
+    breakpoints: list[int]
+    interactive: bool
+
+
+def run_cli(args: CliArgs) -> None:
+    raw_instructions = parser.parse_dat_file(args.file)
+    cpu = simulator.CPU(list(raw_instructions))
+
+    elapsed_time: float
+    if not args.interactive:
+        # there will be no breakpoints, just run the requested number of instructions
+        # and output final processor state
+        before = time.perf_counter_ns()
+        for _ in range(args.n_steps):
+            cpu.step()
+        elapsed_time = time.perf_counter_ns() - before
+    else:
+        ...
+
+    microseconds = elapsed_time / 1000
+    milliseconds = microseconds / 1000
+    seconds = milliseconds / 1000
+
+    final_elapsed = f"{microseconds:.3f} µs" if milliseconds < 1 else f"{milliseconds:.3f} ms" if seconds < 1 else f"{seconds:.3f} s"
+
+    register_state_lines = [
+        "| REGISTER STATE |",
+        "==================",
+        *(f"{utils.register_repr(n)} : {cpu.registers.get(n).unsigned_value:04x}".ljust(18, " ") for n in range(cpu.registers._register_limit)),
+    ]
+
+    # 18
+    if len(register_state_lines) < 7:
+        register_state_lines.extend([18 * " " for _ in range(7 - len(register_state_lines))])
+
+    register_state_lines[0] += "  | FLAG STATE |"
+    register_state_lines[1] += "  =============="
+    register_state_lines[2] += "  NEGATIVE : " + str(cpu.alu.negative)[0]
+    register_state_lines[3] += "  POSITIVE : " + str(cpu.alu.positive)[0]
+    register_state_lines[4] += "  OVERFLOW : " + str(cpu.alu.overflow)[0]
+    register_state_lines[5] += "  CARRY    : " + str(cpu.alu.carry)[0]
+    register_state_lines[6] += "  ZERO     : " + str(cpu.alu.zero)[0]
+
+    output = [
+        f"Instructions run : {args.n_steps}",
+        f"Execution time   : {final_elapsed}",
+        "",
+        *register_state_lines,
+        "",
+        # "| FLAG STATE |",
+        # "==============",
+        # " NEGATIVE : " + str(cpu.alu.negative)[0],
+        # " POSITIVE : " + str(cpu.alu.positive)[0],
+        # " OVERFLOW : " + str(cpu.alu.overflow)[0],
+        # " CARRY    : " + str(cpu.alu.carry)[0],
+        # " ZERO     : " + str(cpu.alu.zero)[0],
+        # "",
+        # "| REGISTER STATE |",
+        # "==================",
+        # *(f" {utils.register_repr(n)} : {cpu.registers.get(n).unsigned_value:04x}"  for n in range(cpu.registers._register_limit)),
+        # "",
+        "|     MEMORY STATE      |",
+        "=========================",
+        "LINE | HEX  | INSTRUCTION",
+        "=========================",
+        dis.decode_memory(cpu),
+    ]
+
+    print("\n".join(output))
