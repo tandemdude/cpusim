@@ -85,6 +85,8 @@ def run_cli(args: CliArgs) -> None:
         f"Instructions run : {args.n_steps}",
         f"Execution time   : {final_elapsed}",
         "",
+        f"Program Counter  : {cpu.pc.value}",
+        "",
         *register_state_lines,
         "",
         "|     MEMORY STATE      |",
