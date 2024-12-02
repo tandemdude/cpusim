@@ -75,11 +75,11 @@ def run_cli(args: CliArgs) -> None:
 
     register_state_lines[0] += "  | FLAG STATE |"
     register_state_lines[1] += "  =============="
-    register_state_lines[2] += "  NEGATIVE : " + str(cpu.alu.negative)[0]
-    register_state_lines[3] += "  POSITIVE : " + str(cpu.alu.positive)[0]
-    register_state_lines[4] += "  OVERFLOW : " + str(cpu.alu.overflow)[0]
-    register_state_lines[5] += "  CARRY    : " + str(cpu.alu.carry)[0]
-    register_state_lines[6] += "  ZERO     : " + str(cpu.alu.zero)[0]
+    register_state_lines[2] += "  NEGATIVE : " + ("ON" if cpu.alu.negative else "OFF")
+    register_state_lines[3] += "  POSITIVE : " + ("ON" if cpu.alu.positive else "OFF")
+    register_state_lines[4] += "  OVERFLOW : " + ("ON" if cpu.alu.overflow else "OFF")
+    register_state_lines[5] += "  CARRY    : " + ("ON" if cpu.alu.carry else "OFF")
+    register_state_lines[6] += "  ZERO     : " + ("ON" if cpu.alu.zero else "OFF")
 
     output = [
         f"Instructions run : {args.n_steps}",

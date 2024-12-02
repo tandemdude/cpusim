@@ -44,7 +44,7 @@ def decode_memory(cpu: simulator.CPU) -> str:
     decoded: list[str] = []
 
     n_zero_instructions = 0
-    for lineno, current_instruction in enumerate(instructions, start=1):
+    for lineno, current_instruction in enumerate(instructions):
         raw_instruction, instruction, instruction_args = current_instruction
 
         if raw_instruction == 0:
