@@ -17,11 +17,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
+
 import typing as t
 
 from cpusim import parser
 from cpusim import simulator
-from cpusim.instructions import base
+
+if t.TYPE_CHECKING:
+    from cpusim.instructions import base
 
 
 class DisArgs(t.NamedTuple):
@@ -32,12 +36,11 @@ def decode_memory(cpu: simulator.CPU) -> str:
     # raw value, decoded instruction, decoded args
     instructions: list[tuple[int, base.Instruction, tuple[int, ...]]] = []
 
-    cpu.pc.unlock()
-    cpu.pc.set(0)
-    while cpu.pc.value < len(cpu.memory._data):
-        instruction, instruction_args = cpu.decode()
-        instructions.append((cpu.memory.get(cpu.pc.value).unsigned_value, instruction, instruction_args))
-        cpu.pc.incr()
+    pc = 0
+    while pc < len(cpu.memory._data):
+        instruction, instruction_args = cpu.decode(pc)
+        instructions.append((cpu.memory.get(pc).unsigned_value, instruction, instruction_args))
+        pc += 1
 
     # format:
     # lineno | hex | decoded instruction

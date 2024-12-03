@@ -70,8 +70,8 @@ class CPU:
         self.memory = memory.Memory(mem)
         self.alu = alu.ALU()
 
-    def decode(self) -> tuple[base.Instruction, tuple[int, ...]]:
-        raw_instruction = self.memory.get(self.pc.value).unsigned_value
+    def decode(self, pc_value: int) -> tuple[base.Instruction, tuple[int, ...]]:
+        raw_instruction = self.memory.get(pc_value).unsigned_value
 
         # decode the instruction into its opcode(s)
         primary_opcode, secondary_opcode = (raw_instruction >> 12) & 0xF, raw_instruction & 0xF
@@ -101,7 +101,7 @@ class CPU:
     def step(self) -> None:
         self.pc.unlock()
 
-        instruction, args = self.decode()
+        instruction, args = self.decode(self.pc.value)
         instruction.execute(args, self)
 
         self.pc.incr()

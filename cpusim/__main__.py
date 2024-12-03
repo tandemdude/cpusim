@@ -32,7 +32,11 @@ dis_parser = root_subparsers.add_parser(
 )
 dis_parser.add_argument("file", action="store", nargs=1, metavar="FILE", help="the .dat file to disassemble")
 
-cli_parser = root_subparsers.add_parser("cli", help="simulate a given .dat file in CLI mode")
+cli_parser = root_subparsers.add_parser(
+    "cli",
+    help="simulate a given .dat file in CLI mode",
+    epilog="NOTE: conditional breakpoints are not supported within the '--breakpoints' argument and can only be set directly within interactive mode",
+)
 cli_parser.add_argument("file", action="store", nargs=1, metavar="FILE", help="the .dat file to simulate")
 cli_parser.add_argument(
     "--steps", "-s", action="store", nargs=1, type=int, help="the number of steps (instructions) to simulate"
@@ -51,6 +55,11 @@ cli_parser.add_argument(
     action="store_true",
     help="run in interactive mode - you will be able to run debug commands and step through instructions one-by-one",
 )
+cli_parser.add_argument(
+    "--auto-halt",
+    action="store_true",
+    help="automatically stop the simulation if a halt-loop is detected",
+)
 
 gui_parser = root_subparsers.add_parser("gui", help="simulate a given .dat file in GUI mode")
 gui_parser.add_argument("file", action="store", nargs=1, metavar="FILE", help="the .dat file to simulate")
@@ -62,6 +71,8 @@ if args.command is None:
 elif args.command == "dis":
     dis.run_dis(dis.DisArgs(args.file[0]))
 elif args.command == "cli":
-    cli.run_cli(cli.CliArgs(args.file[0], args.steps[0], args.breakpoints, args.interactive or args.breakpoints))
+    cli.run_cli(
+        cli.CliArgs(args.file[0], args.steps[0], args.breakpoints, args.interactive or args.breakpoints, args.auto_halt)
+    )
 elif args.command == "gui":
     raise NotImplementedError("GUI not yet implemented")
