@@ -26,6 +26,7 @@ from cpusim import parser
 from cpusim import simulator
 from cpusim.cmd import dis
 from cpusim.instructions import base
+from cpusim.instructions import primary
 from cpusim.instructions import utils
 from cpusim.types import Int16
 
@@ -48,7 +49,7 @@ INTERACTIVE_MODE_HELP_OUTPUT = "\n".join(
         "flags     - dump the flag states to terminal",
         "memory    - dump the memory contents to terminal",
         "exit      - exit the program and dump processor state to terminal",
-        "            aliases: quit, stop, halt",
+        "            ALIASES: quit, stop, halt",
         "",
         "=== Debugging ===",
         "PC             - view the current value of the program counter",
@@ -72,10 +73,12 @@ INTERACTIVE_MODE_HELP_OUTPUT = "\n".join(
         "                 (the max number of instructions was set using the '-s' or '--steps' CLI flag when the program was run)",
         "break set N    - set a breakpoint at instruction N (as output by 'python -m cpusim dis <file>')",
         "                 'N' must be a decimal value (e.g. 10)",
+        "                 ALIASES: bp set"
         "break set expr - set a conditional breakpoint to trigger when 'expr' evaluates to 'True'",
-        "break list     - list the current breakpoints",
+        "                 ALIASES: bp set" "break list     - list the current breakpoints",
+        "                 ALIASES: bp list"
         "break del ID   - delete the breakpoint with the given ID (as output by 'break list')",
-        "",
+        "                 ALIASES: bp del" "",
         "NOTE: all commands are case-sensitive unless otherwise specified",
     ]
 )
@@ -92,6 +95,7 @@ DEBUG_MEMORY_EXPR = re.compile(rf"{_memory}\s*(?:=\s*(?P<new_val>{_dec_hex_bin})
 DEBUG_DISASSEMBLE_EXPR = re.compile(rf"^dis\s+(?:(?P<literal>{_dec_hex_bin})|{_register}|{_memory})$")
 
 EXECUTION_STEP_EXPR = re.compile(r"^step(?:\s+(?P<arg>\d+|\.))?$")
+EXECUTION_BREAKPOINT_EXPR = re.compile(r"^(?:break|bp)\s*(?P<cmd>set|list|del)(?:\s*(?P<arg>.*))?$")
 
 
 def number_string_to_int(number_string: str) -> int:
@@ -111,9 +115,9 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
     ).strip()
     while True:
         # information commands
-        if command.startswith("help"):
+        if command == "help":
             print(INTERACTIVE_MODE_HELP_OUTPUT)
-        elif command.startswith("registers"):
+        elif command == "registers":
             # fmt: off
             print("\n".join([
                 "| REGISTER STATE |",
@@ -124,7 +128,7 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
                 ),
             ]))
             # fmt: on
-        elif command.startswith("flags"):
+        elif command == "flags":
             # fmt: off
             print("\n".join([
                 "| FLAG STATE |",
@@ -136,17 +140,17 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
                 "ZERO     : " + ("ON" if cpu.alu.zero else "OFF"),
             ]))
             # fmt: on
-        elif command.startswith("memory"):
+        elif command == "memory":
             # fmt: off
             print("\n".join([
                 "|     MEMORY STATE      |",
                 "=========================",
                 "LINE | HEX  | INSTRUCTION",
                 "=========================",
-                dis.decode_memory(cpu),
+                dis.decode_memory(cpu, include_pc=True),
             ]))
             # fmt: on
-        elif command[:4] in ("exit", "quit", "stop", "halt"):
+        elif command in ("exit", "quit", "stop", "halt"):
             print("<- exited interactive mode ->\n")
             return total_instructions_run
 
@@ -200,7 +204,7 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
                 print(f"DISASSEMBLED -> {instruction.repr(instruction_args)}")
 
         # execution commands
-        elif match := EXECUTION_STEP_EXPR.match(command):
+        elif match := EXECUTION_STEP_EXPR.fullmatch(command):
             arg = match.group("arg")
 
             if arg is None:
@@ -220,10 +224,15 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
                 print("!! 'step' failed - command syntax invalid")
 
             # will not run if we reached
+            auto_halt_occurred = False
             while condition is not None and total_instructions_run < args.n_steps and condition():
                 if args.auto_halt:
                     # check if the current instruction is an unconditional jump to its own address
-                    ...
+                    instruction, instruction_args = cpu.decode(cpu.pc.value)
+                    if isinstance(instruction, primary.JumpU) and instruction_args[0] == cpu.pc.value:
+                        print("AUTOHALT -> halt loop detected")
+                        auto_halt_occurred = True
+                        break
 
                 step_instructions_run += 1
                 total_instructions_run += 1
@@ -254,15 +263,47 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
 
                 if should_break:
                     break
+            # we reached the max number of instructions - no longer need user input
+            # set the command to 'quit' so that interactive mode will exit
+            if total_instructions_run >= args.n_steps:
+                print("<- max number of instructions reached ->")
+                command = "quit"
+                continue
+
+            if auto_halt_occurred:
+                command = "quit"
+                continue
+        elif match := EXECUTION_BREAKPOINT_EXPR.fullmatch(command):
+            cmd, arg = match.group("cmd"), match.group("arg")
+
+            if cmd == "set" and arg is not None:
+                if arg.isdigit():
+                    # line-based breakpoint
+                    all_breakpoints.append(int(arg))
+                else:
+                    # conditional breakpoint - TODO - figure out expression syntax
+                    ...
+            elif cmd == "list":
+                filtered_breakpoints = [(i, bp) for i, bp in enumerate(all_breakpoints) if bp is not None]
+
+                if not filtered_breakpoints:
+                    print("No breakpoints set")
+                else:
+                    output_lines = [
+                        "| ID | BREAKPOINT |",
+                        "===================",
+                    ]
+                    for bp_id, bp in filtered_breakpoints:
+                        bp_repr = bp
+                        if isinstance(bp, int):
+                            bp_repr = f"LINE {bp}"
+
+                        output_lines.append(str(bp_id).rjust(4) + f" | {bp_repr}")
+                    print("\n".join(output_lines))
+            elif cmd == "del" and arg is not None and arg.isdigit():
+                ...
             else:
-                # we reached the max number of instructions - no longer need user input
-                # set the command to 'quit' so that interactive mode will exit
-                if total_instructions_run >= args.n_steps:
-                    print("<- max number of instructions reached ->")
-                    command = "quit"
-                    continue
-        elif command.startswith("break"):
-            ...
+                print("!! 'break' failed - command syntax invalid")
 
         # unrecognised command!
         else:

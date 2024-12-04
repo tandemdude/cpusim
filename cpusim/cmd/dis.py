@@ -32,7 +32,7 @@ class DisArgs(t.NamedTuple):
     file: str
 
 
-def decode_memory(cpu: simulator.CPU) -> str:
+def decode_memory(cpu: simulator.CPU, include_pc: bool = False) -> str:
     # raw value, decoded instruction, decoded args
     instructions: list[tuple[int, base.Instruction, tuple[int, ...]]] = []
 
@@ -50,7 +50,7 @@ def decode_memory(cpu: simulator.CPU) -> str:
     for lineno, current_instruction in enumerate(instructions):
         raw_instruction, instruction, instruction_args = current_instruction
 
-        if raw_instruction == 0:
+        if raw_instruction == 0 and not (include_pc and cpu.pc.value == lineno):
             n_zero_instructions += 1
             continue
 
@@ -60,7 +60,10 @@ def decode_memory(cpu: simulator.CPU) -> str:
             n_zero_instructions = 0
 
         # we have a real instruction (or maybe a data line?)
-        decoded.append(f"{lineno:04} | {raw_instruction:04x} | {instruction.repr(instruction_args)}")
+        if include_pc and cpu.pc.value == lineno:
+            decoded.append(f"{lineno:04} | {raw_instruction:04x} | {instruction.repr(instruction_args)}   <-- PC")
+        else:
+            decoded.append(f"{lineno:04} | {raw_instruction:04x} | {instruction.repr(instruction_args)}")
 
     if n_zero_instructions != 0:
         decoded.append(f"<- {n_zero_instructions} zeros omitted ->")
