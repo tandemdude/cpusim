@@ -280,6 +280,7 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
                 if arg.isdigit():
                     # line-based breakpoint
                     all_breakpoints.append(int(arg))
+                    print(f"New breakpoint ID {len(all_breakpoints) - 1}")
                 else:
                     # conditional breakpoint - TODO - figure out expression syntax
                     ...
@@ -301,7 +302,12 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
                         output_lines.append(str(bp_id).rjust(4) + f" | {bp_repr}")
                     print("\n".join(output_lines))
             elif cmd == "del" and arg is not None and arg.isdigit():
-                ...
+                idx = int(arg)
+                if idx >= len(all_breakpoints) or all_breakpoints[idx] is None:
+                    print(f"Breakpoint with ID {idx} not found")
+                else:
+                    all_breakpoints[idx] = None
+                    print(f"Removed breakpoint with ID {idx}")
             else:
                 print("!! 'break' failed - command syntax invalid")
 
