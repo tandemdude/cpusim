@@ -158,6 +158,7 @@ class JumpU(base.Instruction):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.DIRECT
+    incr_pc = False
 
     def repr(self, args: tuple[int, ...]) -> str:
         args_ = base.DirectModeArgs(*args)
@@ -167,13 +168,13 @@ class JumpU(base.Instruction):
         args_ = base.DirectModeArgs(*args)
 
         cpu.pc.set(args_.constant)
-        cpu.pc.lock()
 
 
 class JumpZ(base.Instruction):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.DIRECT
+    incr_pc = False
 
     def repr(self, args: tuple[int, ...]) -> str:
         args_ = base.DirectModeArgs(*args)
@@ -186,13 +187,13 @@ class JumpZ(base.Instruction):
             return
 
         cpu.pc.set(args_.constant)
-        cpu.pc.lock()
 
 
 class JumpNZ(base.Instruction):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.DIRECT
+    incr_pc = False
 
     def repr(self, args: tuple[int, ...]) -> str:
         args_ = base.DirectModeArgs(*args)
@@ -205,13 +206,13 @@ class JumpNZ(base.Instruction):
             return
 
         cpu.pc.set(args_.constant)
-        cpu.pc.lock()
 
 
 class JumpC(base.Instruction):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.DIRECT
+    incr_pc = False
 
     def repr(self, args: tuple[int, ...]) -> str:
         args_ = base.DirectModeArgs(*args)
@@ -224,7 +225,6 @@ class JumpC(base.Instruction):
             return
 
         cpu.pc.set(args_.constant)
-        cpu.pc.lock()
 
 
 class Call(base.Instruction):

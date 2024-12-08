@@ -60,6 +60,7 @@ class Instruction(abc.ABC):
     __slots__ = ()
 
     addressing_mode: t.ClassVar[AddressingMode] = AddressingMode.UNKNOWN
+    incr_pc: t.ClassVar[bool] = True
 
     @abc.abstractmethod
     def repr(self, args: tuple[int, ...]) -> str: ...

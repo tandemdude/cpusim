@@ -36,11 +36,18 @@ def decode_memory(cpu: simulator.CPU, include_pc: bool = False) -> str:
     # raw value, decoded instruction, decoded args
     instructions: list[tuple[int, base.Instruction, tuple[int, ...]]] = []
 
+    # save the instruction register state
+    prev_ir = cpu.ir.value
+
     pc = 0
     while pc < len(cpu.memory._data):
-        instruction, instruction_args = cpu.decode(pc)
+        cpu.ir.set(cpu.memory.get(pc).unsigned_value)
+        instruction, instruction_args = cpu.decode()
         instructions.append((cpu.memory.get(pc).unsigned_value, instruction, instruction_args))
         pc += 1
+
+    # restore the instruction register to the previous state
+    cpu.ir.set(prev_ir)
 
     # format:
     # lineno | hex | decoded instruction

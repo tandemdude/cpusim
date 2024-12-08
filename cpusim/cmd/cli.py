@@ -26,7 +26,6 @@ from cpusim import parser
 from cpusim import simulator
 from cpusim.cmd import dis
 from cpusim.instructions import base
-from cpusim.instructions import primary
 from cpusim.instructions import utils
 from cpusim.types import Int16
 
@@ -178,25 +177,23 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
 
             instruction: base.Instruction | None = None
             instruction_args: tuple[int, ...] | None = None
-            if literal is not None:
-                # parse to an integer and move the value into memory temporarily so cpu.decode() can decode it
-                prev_value = cpu.memory.get(0)
 
-                cpu.memory.set(0, Int16(number_string_to_int(literal)))
-                instruction, instruction_args = cpu.decode(0)
+            if any(i is not None for i in [literal, reg_letter, mem_addr]):
+                prev_value = cpu.ir.value
 
-                cpu.memory.set(0, prev_value)
-            elif reg_letter is not None:
-                # read integer from register and move into memory temporarily so cpu.decode() can decode it
-                prev_value = cpu.memory.get(0)
+                if literal is not None:
+                    # parse to an integer and move the value into IR
+                    cpu.ir.set(number_string_to_int(literal))
+                elif reg_letter is not None:
+                    # read integer from register and move into IR
+                    cpu.ir.set(cpu.registers.get(ord("A") - ord(reg_letter)).unsigned_value)
+                else:
+                    # read integer from memory and move into IR
+                    cpu.ir.set(cpu.memory.get(number_string_to_int(mem_addr)).unsigned_value)
 
-                cpu.memory.set(0, cpu.registers.get(ord("A") - ord(reg_letter)))
-                instruction, instruction_args = cpu.decode(0)
+                instruction, instruction_args = cpu.decode()
 
-                cpu.memory.set(0, prev_value)
-            elif mem_addr is not None:
-                # easy - can just pass the correct value into cpu.decode() to point to the correct address
-                instruction, instruction_args = cpu.decode(number_string_to_int(mem_addr))
+                cpu.ir.set(prev_value)
 
             if instruction is None or instruction_args is None:
                 print("!! 'dis' failed - command syntax invalid")
@@ -226,18 +223,14 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
             # will not run if we reached
             auto_halt_occurred = False
             while condition is not None and total_instructions_run < args.n_steps and condition():
-                if args.auto_halt:
-                    # check if the current instruction is an unconditional jump to its own address
-                    instruction, instruction_args = cpu.decode(cpu.pc.value)
-                    if isinstance(instruction, primary.JumpU) and instruction_args[0] == cpu.pc.value:
-                        print("AUTOHALT -> halt loop detected")
-                        auto_halt_occurred = True
-                        break
-
                 step_instructions_run += 1
                 total_instructions_run += 1
 
-                cpu.step()
+                halted = cpu.step(detect_halt_loop=args.auto_halt)
+                if halted:
+                    print("AUTOHALT -> halt loop detected\n")
+                    auto_halt_occurred = True
+                    break
 
                 # check if a breakpoint is satisfied
                 # we check this AFTER running at least one instruction so that we won't get an infinite
@@ -316,7 +309,6 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
             print("!! unknown command")
 
         command = input(">>> ")
-        ...
 
 
 def run_cli(args: CliArgs) -> None:
@@ -328,10 +320,16 @@ def run_cli(args: CliArgs) -> None:
         # there will be no breakpoints, just run the requested number of instructions
         # and output final processor state
         before = time.perf_counter_ns()
-        for _ in range(args.n_steps):
-            cpu.step()
+
+        n = 0
+        for n in range(args.n_steps):
+            halted = cpu.step(detect_halt_loop=args.auto_halt)
+            if halted:
+                print("AUTOHALT -> halt loop detected\n")
+                break
+
         elapsed_time = time.perf_counter_ns() - before
-        instructions_run = args.n_steps
+        instructions_run = n + 1
     else:
         before = time.perf_counter_ns()
         instructions_run = run_interactive_cli(cpu, args)
@@ -370,11 +368,15 @@ def run_cli(args: CliArgs) -> None:
     register_state_lines[5] += "  CARRY    : " + ("ON" if cpu.alu.carry else "OFF")
     register_state_lines[6] += "  ZERO     : " + ("ON" if cpu.alu.zero else "OFF")
 
+    cpu.fetch()
+    final_instruction, final_instruction_args = cpu.decode()
+
     output = [
-        f"Instructions run : {instructions_run}",
-        f"Execution time   : {final_elapsed}",
+        f"Instructions run     : {instructions_run}",
+        f"Execution time       : {final_elapsed}",
         "",
-        f"Program Counter  : {cpu.pc.value}",
+        f"Program Counter      : {cpu.pc.value}",
+        f"Instruction Register : {final_instruction.repr(final_instruction_args)}",
         "",
         *register_state_lines,
         "",
@@ -382,7 +384,7 @@ def run_cli(args: CliArgs) -> None:
         "=========================",
         "LINE | HEX  | INSTRUCTION",
         "=========================",
-        dis.decode_memory(cpu),
+        dis.decode_memory(cpu, include_pc=True),
     ]
 
     print("\n".join(output))

@@ -20,7 +20,6 @@
 
 from cpusim.components import alu
 from cpusim.components import memory
-from cpusim.components import pc
 from cpusim.components import registers
 from cpusim.instructions import base
 from cpusim.instructions import primary
@@ -62,16 +61,21 @@ INSTRUCTIONS_MAP: dict[tuple[int, int], base.Instruction] = {
 
 
 class CPU:
-    __slots__ = ("alu", "memory", "pc", "registers")
+    __slots__ = ("alu", "ir", "memory", "pc", "registers")
 
     def __init__(self, mem: list[int]) -> None:
-        self.pc = pc.ProgramCounter()
+        self.pc = registers.IntRegister()
+        self.ir = registers.IntRegister()
         self.registers = registers.Registers(8)
         self.memory = memory.Memory(mem)
         self.alu = alu.ALU()
 
-    def decode(self, pc_value: int) -> tuple[base.Instruction, tuple[int, ...]]:
-        raw_instruction = self.memory.get(pc_value).unsigned_value
+    def fetch(self) -> None:
+        current_instruction = self.memory.get(self.pc.value)
+        self.ir.set(current_instruction.unsigned_value)
+
+    def decode(self) -> tuple[base.Instruction, tuple[int, ...]]:
+        raw_instruction = self.ir.value
 
         # decode the instruction into its opcode(s)
         primary_opcode, secondary_opcode = (raw_instruction >> 12) & 0xF, raw_instruction & 0xF
@@ -98,11 +102,19 @@ class CPU:
 
         return instruction, args
 
-    def step(self) -> None:
-        self.pc.unlock()
-
-        instruction, args = self.decode(self.pc.value)
+    def execute(self, instruction: base.Instruction, args: tuple[int, ...]) -> None:
         instruction.execute(args, self)
 
-        self.pc.incr()
-        self.pc.lock()
+    def step(self, *, detect_halt_loop: bool = False) -> bool:
+        self.fetch()
+        instruction, args = self.decode()
+
+        if detect_halt_loop and isinstance(instruction, primary.JumpU) and args[0] == self.pc.value:
+            return True
+
+        self.execute(instruction, args)
+
+        if instruction.incr_pc:
+            self.pc.incr()
+
+        return False

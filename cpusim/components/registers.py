@@ -22,6 +22,23 @@ import collections
 from cpusim.types import Int16
 
 
+class IntRegister:
+    __slots__ = ("_val",)
+
+    def __init__(self) -> None:
+        self._val = 0
+
+    @property
+    def value(self) -> int:
+        return self._val
+
+    def incr(self) -> None:
+        self._val += 1
+
+    def set(self, val: int) -> None:
+        self._val = val
+
+
 class Registers:
     __slots__ = (
         "_register_limit",
