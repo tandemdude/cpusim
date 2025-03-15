@@ -1,25 +1,118 @@
-# Copyright (c) 2024-present tandemdude
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
 import pytest
 
+from cpusim.common.types import Int8
 from cpusim.common.types import Int16
+
+
+@pytest.mark.parametrize(
+    ["n1", "expected_signed", "expected_unsigned"],
+    [
+        (Int8(0b11111111), -1, 255),
+        (Int8(0b00000000), 0, 0),
+        (Int8(0b10000001), -127, 129),
+        (Int8(0b01111111), 127, 127),
+        (Int8(0b10101010), -86, 170),
+        (Int8(0b01010101), 85, 85),
+    ],
+)
+def test_Int8_signedness(n1: Int8, expected_signed: int, expected_unsigned: int) -> None:
+    assert n1.signed_value == expected_signed
+    assert n1.unsigned_value == expected_unsigned
+
+
+@pytest.mark.parametrize(
+    ["n1", "n2", "expected"],
+    [
+        # simple addition without carry
+        (Int8(0x01), Int8(0x01), Int8(0x02, carry=False)),
+        (Int8(0x12), Int8(0x21), Int8(0x33, carry=False)),
+        # maximum values without carry
+        (Int8(0x7F), Int8(0x01), Int8(0x80, carry=False)),
+        # addition generating carry
+        (Int8(0xFF), Int8(0x01), Int8(0x00, carry=True)),
+        (Int8(0x80), Int8(0x80), Int8(0x00, carry=True)),
+        # adding zero
+        (Int8(0x00), Int8(0x00), Int8(0x00, carry=False)),
+        (Int8(0x12), Int8(0x00), Int8(0x12, carry=False)),
+        # carry propagation
+        (Int8(0x0F), Int8(0x01), Int8(0x10, carry=False)),
+        # extra cases
+        (Int8(0xFF), Int8(0xFF), Int8(0xFE, carry=True)),
+        (Int8(0x7F), Int8(0x80), Int8(0xFF, carry=False)),
+    ],
+)
+def test_Int8_unsigned_addition(n1: Int8, n2: Int8, expected: Int8) -> None:
+    result = n1 + n2
+
+    assert result.unsigned_value == expected.unsigned_value
+    assert result.carry == expected.carry
+
+
+@pytest.mark.parametrize(
+    ["n1", "n2", "expected"],
+    [
+        # simple addition without overflow
+        (Int8(0x01), Int8(0x01), Int8(0x02, overflow=False)),
+        (Int8(0x12), Int8(0x21), Int8(0x33, overflow=False)),
+        # maximum positive values without overflow
+        (Int8(0x3F), Int8(0x01), Int8(0x40, overflow=False)),
+        # positive overflow
+        (Int8(0x7F), Int8(0x01), Int8(0x80, overflow=True)),
+        # minimum negative values without overflow
+        (Int8(0x81), Int8(0xFF), Int8(0x80, overflow=False)),
+        # negative overflow
+        (Int8(0x80), Int8(0xFF), Int8(0x7F, overflow=True)),
+        # adding zero
+        (Int8(0x00), Int8(0x00), Int8(0x00, overflow=False)),
+        (Int8(0x12), Int8(0x00), Int8(0x12, overflow=False)),
+        (Int8(0x80), Int8(0x00), Int8(0x80, overflow=False)),
+        # mixed sign addition without overflow
+        (Int8(0x7F), Int8(0x80), Int8(0xFF, overflow=False)),
+        (Int8(0x80), Int8(0x7F), Int8(0xFF, overflow=False)),
+        # extra cases
+        (Int8(0x7F), Int8(0x7F), Int8(0xFE, overflow=True)),
+        (Int8(0x80), Int8(0x80), Int8(0x00, overflow=True)),
+    ],
+)
+def test_Int8_signed_addition(n1: Int8, n2: Int8, expected: Int8) -> None:
+    result = n1 + n2
+
+    assert result.signed_value == expected.signed_value
+    assert result.overflow == expected.overflow
+
+
+@pytest.mark.parametrize(
+    ["n1", "n2", "expected"],
+    [
+        # simple subtraction without overflow
+        (Int8(0x01), Int8(0x01), Int8(0x00, overflow=False)),
+        (Int8(0x12), Int8(0x01), Int8(0x11, overflow=False)),
+        (Int8(0x7F), Int8(0x7E), Int8(0x01, overflow=False)),
+        # subtraction resulting in negative numbers without overflow
+        (Int8(0x00), Int8(0x01), Int8(0xFF, overflow=False)),
+        # negative without overflow
+        (Int8(0x81), Int8(0x01), Int8(0x80, overflow=False)),
+        # negative overflow
+        (Int8(0x80), Int8(0x01), Int8(0x7F, overflow=True)),
+        # positive overflow
+        (Int8(0x7F), Int8(0xFF), Int8(0x80, overflow=True)),
+        # subtraction with zero
+        (Int8(0x00), Int8(0x00), Int8(0x00, overflow=False)),
+        (Int8(0x12), Int8(0x00), Int8(0x12, overflow=False)),
+        (Int8(0x00), Int8(0x12), Int8(0xEE, overflow=False)),
+        # mixed sign subtraction
+        (Int8(0x7F), Int8(0x80), Int8(0xFF, overflow=True)),
+        (Int8(0x80), Int8(0x7F), Int8(0x01, overflow=True)),
+        # extra cases
+        (Int8(0x7F), Int8(0x7F), Int8(0x00, overflow=False)),
+        (Int8(0x80), Int8(0x80), Int8(0x00, overflow=False)),
+    ],
+)
+def test_Int8_subtraction(n1: Int8, n2: Int8, expected: Int8) -> None:
+    result = n1 - n2
+
+    assert result.signed_value == expected.signed_value
+    assert result.overflow == expected.overflow
 
 
 @pytest.mark.parametrize(

@@ -27,7 +27,6 @@ from nox import options
 
 SCRIPT_PATHS = [
     os.path.join(".", "cpusim"),
-    # os.path.join(".", "scripts"),
     os.path.join(".", "tests"),
     "noxfile.py",
 ]

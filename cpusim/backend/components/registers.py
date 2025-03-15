@@ -30,6 +30,9 @@ class IntRegister:
     def __init__(self) -> None:
         self._val = 0
 
+    def __repr__(self) -> str:
+        return f"IntRegister({hex(self._val)})"
+
     @property
     def value(self) -> int:
         return self._val
@@ -50,6 +53,9 @@ class Registers:
     def __init__(self, register_limit: int) -> None:
         self._register_limit = register_limit
         self._values: collections.defaultdict[int, Int16] = collections.defaultdict(lambda: Int16(0))
+
+    def __repr__(self) -> str:
+        return f"Registers(...{len(self._values)} entries)"
 
     def get(self, idx: int) -> Int16:
         if idx >= self._register_limit:

@@ -24,7 +24,8 @@ import enum
 import typing as t
 
 if t.TYPE_CHECKING:
-    from cpusim.backend import simulators
+    # PyCharm doesn't think this import is used (but it is), hence the noqa
+    from cpusim.backend import simulators  # noqa: F401, RUF100
 
 CpuT = t.TypeVar("CpuT", "simulators.CPU1a", "simulators.CPU1d")
 
@@ -71,7 +72,6 @@ class Instruction(abc.ABC, t.Generic[CpuT]):
     def execute(self, args: tuple[int, ...], cpu: CpuT) -> None: ...
 
 
-# TODO - 1a is accumulator based so all instructions use the immediate format, with the register ignored
 class Instruction1a(Instruction["simulators.CPU1a"], abc.ABC):
     __slots__ = ()
 

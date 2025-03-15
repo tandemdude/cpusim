@@ -31,6 +31,9 @@ class Memory:
         if len(data) < max_size:
             self._data.extend([Int16(0) for _ in range(max_size - len(data))])
 
+    def __repr__(self) -> str:
+        return f"Memory(...{len(self._data)} entries)"
+
     def get(self, address: int) -> Int16:
         if address >= len(self._data):
             raise ValueError("Address out of bounds")

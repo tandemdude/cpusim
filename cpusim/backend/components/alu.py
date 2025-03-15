@@ -40,6 +40,13 @@ class ALU(abc.ABC, t.Generic[T]):
         self.carry: bool = False
         self.zero: bool = False
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"n={self.negative}, p={self.positive}, o={self.overflow}, c={self.carry}, z={self.zero}"
+            ")"
+        )
+
     def _set_basic_flags(self, result: T) -> None:
         self.negative = result.signed_value < 0
         self.positive = result.signed_value > 0
