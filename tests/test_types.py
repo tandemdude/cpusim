@@ -19,7 +19,7 @@
 # SOFTWARE.
 import pytest
 
-from cpusim.types import Int16
+from cpusim.common.types import Int16
 
 
 @pytest.mark.parametrize(

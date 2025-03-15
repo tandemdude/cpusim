@@ -21,11 +21,11 @@ from __future__ import annotations
 
 import typing as t
 
-from cpusim import parser
-from cpusim import simulator
+from cpusim_old import parser
+from cpusim_old import simulator
 
 if t.TYPE_CHECKING:
-    from cpusim.instructions import base
+    from cpusim_old.instructions import base
 
 
 class DisArgs(t.NamedTuple):

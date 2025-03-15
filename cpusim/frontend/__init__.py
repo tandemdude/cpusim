@@ -17,15 +17,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from cpusim.types import Int16
-
-
-def signed_extend_8_to_16_bits(value: int) -> Int16:
-    # only accept 8 bit values
-    value = value & 0xFF
-    # shift the sign bit 8 places left, and concatenate the remaining 7 bits
-    return Int16(((value << 8) & 0x8000) | value & 0x7F)
-
-
-def register_repr(register: int) -> str:
-    return f"R{chr(ord('A') + register)}"

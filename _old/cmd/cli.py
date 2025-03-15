@@ -21,13 +21,13 @@ import re
 import time
 import typing as t
 
-from cpusim import __version__
-from cpusim import parser
-from cpusim import simulator
-from cpusim.cmd import dis
-from cpusim.instructions import base
-from cpusim.instructions import utils
-from cpusim.types import Int16
+from cpusim_old import __version__
+from cpusim_old import parser
+from cpusim_old import simulator
+from cpusim_old.cmd import dis
+from cpusim_old.instructions import base
+from cpusim_old.instructions import utils
+from cpusim_old.types import Int16
 
 
 class CliArgs(t.NamedTuple):

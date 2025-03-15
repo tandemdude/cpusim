@@ -19,22 +19,28 @@
 # SOFTWARE.
 from __future__ import annotations
 
+import abc
 import typing as t
 
+if t.TYPE_CHECKING:
+    import typing_extensions as t_ex
 
-class Int16:
+__all__ = ["FixedWidthInt", "Int8", "Int16"]
+
+
+class FixedWidthInt(abc.ABC):
     __slots__ = ("_value", "carry", "overflow")
 
-    def __init__(self, value: int, *, carry: bool = False, overflow: bool = False) -> None:
-        # ensure value fits within 16 bits
-        self._value = value & 0xFFFF
+    _MAX_VALUE: t.ClassVar[int]
 
+    def __init__(self, value: int, *, carry: bool = False, overflow: bool = False) -> None:
+        self._value = value & self._MAX_VALUE
         self.carry = carry
         self.overflow = overflow
 
     @property
-    def signed_value(self) -> int:
-        return (self._value ^ 0x8000) - 0x8000
+    @abc.abstractmethod
+    def signed_value(self) -> int: ...
 
     @property
     def unsigned_value(self) -> int:
@@ -42,22 +48,22 @@ class Int16:
 
     def __repr__(self) -> str:
         return (
-            f"Int16(signed={self.signed_value}, unsigned={self.unsigned_value}"
+            f"{self.__class__.__name__}(signed={self.signed_value}, unsigned={self.unsigned_value}"
             + (", carry=True" if self.carry else "")
             + (", overflow=True" if self.overflow else "")
             + ")"
         )
 
-    def __add__(self, other: t.Any) -> Int16:
-        if not isinstance(other, Int16):
-            raise TypeError(f"Cannot add {type(other)} to Int16")
+    def __add__(self, other: t.Any) -> t_ex.Self:
+        if not isinstance(other, self.__class__):
+            raise TypeError(f"Cannot add {type(other)} to {self.__class__.__name__}")
 
         # do addition
         raw_result = self._value + other._value
-        output = Int16(raw_result)
+        output = self.__class__(raw_result)
 
         # check unsigned to set carry flag
-        if raw_result.bit_length() > 16:
+        if raw_result.bit_length() > self._MAX_VALUE.bit_length():
             output.carry = True
 
         # check signed to set overflow flag
@@ -72,13 +78,13 @@ class Int16:
 
         return output
 
-    def __sub__(self, other: t.Any) -> Int16:
-        if not isinstance(other, Int16):
-            raise TypeError(f"Cannot subtract {type(other)} from Int16")
+    def __sub__(self, other: t.Any) -> t_ex.Self:
+        if not isinstance(other, self.__class__):
+            raise TypeError(f"Cannot subtract {type(other)} from {self.__class__.__name__}")
 
         # do subtraction
         raw_result = self.signed_value - other.signed_value
-        output = Int16(raw_result)
+        output = self.__class__(raw_result)
 
         # check overflow flag - carry is not set on subtraction
         if (self.signed_value >= 0 and other.signed_value < 0 and output.signed_value < 0) or (
@@ -87,3 +93,25 @@ class Int16:
             output.overflow = True
 
         return output
+
+
+class Int8(FixedWidthInt):
+    __slots__ = ()
+
+    # ensure value fits within 8 bits
+    _MAX_VALUE = 0xFF
+
+    @property
+    def signed_value(self) -> int:
+        return (self._value ^ 0x80) - 0x80
+
+
+class Int16(FixedWidthInt):
+    __slots__ = ()
+
+    # ensure value fits within 16 bits
+    _MAX_VALUE = 0xFFFF
+
+    @property
+    def signed_value(self) -> int:
+        return (self._value ^ 0x8000) - 0x8000

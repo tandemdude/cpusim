@@ -17,53 +17,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import annotations
-
-import abc
-import enum
-import typing as t
-
-if t.TYPE_CHECKING:
-    from cpusim import simulator
+from cpusim.common.types import Int16
 
 
-class AddressingMode(enum.Enum):
-    UNKNOWN = enum.auto()
-    REGISTER = enum.auto()
-    REGISTER_INDIRECT = enum.auto()
-    IMMEDIATE = enum.auto()
-    ABSOLUTE = enum.auto()
-    DIRECT = enum.auto()
+def sign_extend_8_to_16_bits(value: int) -> Int16:
+    # only accept 8 bit values
+    value = value & 0xFF
+    # shift the sign bit 8 places left, and concatenate the remaining 7 bits
+    return Int16(((value << 8) & 0x8000) | value & 0x7F)
 
 
-class RegisterModeArgs(t.NamedTuple):
-    register_1: int
-    register_2: int
-
-
-RegisterIndirectModeArgs = RegisterModeArgs
-
-
-class ImmediateModeArgs(t.NamedTuple):
-    register: int
-    constant: int
-
-
-class DirectModeArgs(t.NamedTuple):
-    constant: int
-
-
-AbsoluteModeArgs = DirectModeArgs
-
-
-class Instruction(abc.ABC):
-    __slots__ = ()
-
-    addressing_mode: t.ClassVar[AddressingMode] = AddressingMode.UNKNOWN
-    incr_pc: t.ClassVar[bool] = True
-
-    @abc.abstractmethod
-    def repr(self, args: tuple[int, ...]) -> str: ...
-
-    @abc.abstractmethod
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None: ...
+def register_repr(register: int) -> str:
+    return f"R{chr(ord('A') + register)}"

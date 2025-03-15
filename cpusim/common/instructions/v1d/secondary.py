@@ -21,14 +21,14 @@ from __future__ import annotations
 
 import typing as t
 
-from cpusim.instructions import base
-from cpusim.instructions import utils
+from cpusim.common.instructions import base
+from cpusim.common.instructions import utils
 
 if t.TYPE_CHECKING:
-    from cpusim import simulator
+    from cpusim.backend import simulators
 
 
-class Ret(base.Instruction):
+class Ret(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.DIRECT
@@ -36,11 +36,11 @@ class Ret(base.Instruction):
     def repr(self, args: tuple[int, ...]) -> str:
         return "ret"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         raise NotImplementedError("RET is not implemented")
 
 
-class Move(base.Instruction):
+class Move(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -49,13 +49,13 @@ class Move(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"move {utils.register_repr(args_.register_1)} {utils.register_repr(args_.register_2)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         cpu.registers.set(args_.register_1, cpu.registers.get(args_.register_2))
 
 
-class Load(base.Instruction):
+class Load(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER_INDIRECT
@@ -64,13 +64,13 @@ class Load(base.Instruction):
         args_ = base.RegisterIndirectModeArgs(*args)
         return f"load {utils.register_repr(args_.register_1)} ({utils.register_repr(args_.register_2)})"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterIndirectModeArgs(*args)
 
         cpu.registers.set(args_.register_1, cpu.memory.get(cpu.registers.get(args_.register_2).unsigned_value))
 
 
-class Store(base.Instruction):
+class Store(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER_INDIRECT
@@ -79,13 +79,13 @@ class Store(base.Instruction):
         args_ = base.RegisterIndirectModeArgs(*args)
         return f"store {utils.register_repr(args_.register_1)} ({utils.register_repr(args_.register_2)})"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterIndirectModeArgs(*args)
 
         cpu.memory.set(cpu.registers.get(args_.register_2).unsigned_value, cpu.registers.get(args_.register_1))
 
 
-class Rol(base.Instruction):
+class Rol(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -94,14 +94,14 @@ class Rol(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"rol {utils.register_repr(args_.register_1)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         result = cpu.alu.rol(cpu.registers.get(args_.register_1))
         cpu.registers.set(args_.register_1, result)
 
 
-class Xor(base.Instruction):
+class Xor(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -110,14 +110,14 @@ class Xor(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"xor {utils.register_repr(args_.register_1)} {utils.register_repr(args_.register_2)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         result = cpu.alu.xor(cpu.registers.get(args_.register_1), cpu.registers.get(args_.register_2))
         cpu.registers.set(args_.register_1, result)
 
 
-class Ror(base.Instruction):
+class Ror(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -126,14 +126,14 @@ class Ror(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"ror {utils.register_repr(args_.register_1)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         result = cpu.alu.ror(cpu.registers.get(args_.register_1))
         cpu.registers.set(args_.register_1, result)
 
 
-class Add(base.Instruction):
+class Add(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -142,14 +142,14 @@ class Add(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"add {utils.register_repr(args_.register_1)} {utils.register_repr(args_.register_2)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         result = cpu.alu.add(cpu.registers.get(args_.register_1), cpu.registers.get(args_.register_2))
         cpu.registers.set(args_.register_1, result)
 
 
-class Sub(base.Instruction):
+class Sub(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -158,14 +158,14 @@ class Sub(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"sub {utils.register_repr(args_.register_1)} {utils.register_repr(args_.register_2)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         result = cpu.alu.sub(cpu.registers.get(args_.register_1), cpu.registers.get(args_.register_2))
         cpu.registers.set(args_.register_1, result)
 
 
-class And(base.Instruction):
+class And(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -174,14 +174,14 @@ class And(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"and {utils.register_repr(args_.register_1)} {utils.register_repr(args_.register_2)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         result = cpu.alu.and_(cpu.registers.get(args_.register_1), cpu.registers.get(args_.register_2))
         cpu.registers.set(args_.register_1, result)
 
 
-class Or(base.Instruction):
+class Or(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -190,14 +190,14 @@ class Or(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"or {utils.register_repr(args_.register_1)} {utils.register_repr(args_.register_2)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         result = cpu.alu.or_(cpu.registers.get(args_.register_1), cpu.registers.get(args_.register_2))
         cpu.registers.set(args_.register_1, result)
 
 
-class Asl(base.Instruction):
+class Asl(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -206,14 +206,14 @@ class Asl(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"sub {utils.register_repr(args_.register_1)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         args_ = base.RegisterModeArgs(*args)
 
         result = cpu.alu.asl(cpu.registers.get(args_.register_1))
         cpu.registers.set(args_.register_1, result)
 
 
-class Xop2(base.Instruction):
+class Xop2(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER_INDIRECT
@@ -222,11 +222,11 @@ class Xop2(base.Instruction):
         args_ = base.RegisterIndirectModeArgs(*args)
         return f"xop2 {utils.register_repr(args_.register_1)} ({utils.register_repr(args_.register_2)})"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         raise NotImplementedError("XOP2 is not implemented")
 
 
-class Xop3(base.Instruction):
+class Xop3(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -235,11 +235,11 @@ class Xop3(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"xop3 {utils.register_repr(args_.register_1)} {utils.register_repr(args_.register_2)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         raise NotImplementedError("XOP3 is not implemented")
 
 
-class Xop4(base.Instruction):
+class Xop4(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER_INDIRECT
@@ -248,11 +248,11 @@ class Xop4(base.Instruction):
         args_ = base.RegisterIndirectModeArgs(*args)
         return f"xop4 {utils.register_repr(args_.register_1)} ({utils.register_repr(args_.register_2)})"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         raise NotImplementedError("XOP4 is not implemented")
 
 
-class Xop5(base.Instruction):
+class Xop5(base.Instruction1d):
     __slots__ = ()
 
     addressing_mode = base.AddressingMode.REGISTER
@@ -261,5 +261,5 @@ class Xop5(base.Instruction):
         args_ = base.RegisterModeArgs(*args)
         return f"xop5 {utils.register_repr(args_.register_1)} {utils.register_repr(args_.register_2)}"
 
-    def execute(self, args: tuple[int, ...], cpu: simulator.CPU) -> None:
+    def execute(self, args: tuple[int, ...], cpu: simulators.CPU1d) -> None:
         raise NotImplementedError("XOP5 is not implemented")

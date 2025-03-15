@@ -17,25 +17,35 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from cpusim.types import Int16
+import abc
+import typing as t
+
+from cpusim.common.types import Int8
+from cpusim.common.types import Int16
+
+__all__ = ["ALU", "Int8ALU", "Int16ALU"]
+
+T = t.TypeVar("T", Int8, Int16)
 
 
-class ALU:
-    __slots__ = ("carry", "negative", "overflow", "positive", "zero")
+class ALU(abc.ABC, t.Generic[T]):
+    __slots__ = ("_int_type", "carry", "negative", "overflow", "positive", "zero")
 
-    def __init__(self) -> None:
+    def __init__(self, int_type: type[T]) -> None:
+        self._int_type: type[T] = int_type
+
         self.negative: bool = False
         self.positive: bool = False
         self.overflow: bool = False
         self.carry: bool = False
         self.zero: bool = False
 
-    def _set_basic_flags(self, result: Int16) -> None:
+    def _set_basic_flags(self, result: T) -> None:
         self.negative = result.signed_value < 0
         self.positive = result.signed_value > 0
         self.zero = result.signed_value == 0
 
-    def add(self, n1: Int16, n2: Int16) -> Int16:
+    def add(self, n1: T, n2: T) -> T:
         result = n1 + n2
 
         self._set_basic_flags(result)
@@ -44,7 +54,7 @@ class ALU:
 
         return result
 
-    def sub(self, n1: Int16, n2: Int16) -> Int16:
+    def sub(self, n1: T, n2: T) -> T:
         result = n1 - n2
 
         self._set_basic_flags(result)
@@ -53,32 +63,46 @@ class ALU:
 
         return result
 
-    def and_(self, n1: Int16, n2: Int16) -> Int16:
-        result = Int16(n1.unsigned_value & n2.unsigned_value)
+    def and_(self, n1: T, n2: T) -> T:
+        result = self._int_type(n1.unsigned_value & n2.unsigned_value)
 
         self._set_basic_flags(result)
         self.carry = self.overflow = False
 
         return result
+
+    def xor(self, n1: T, n2: T) -> T:
+        result = self._int_type(n1.unsigned_value ^ n2.unsigned_value)
+
+        self._set_basic_flags(result)
+        self.carry = self.overflow = False
+
+        return result
+
+    def or_(self, n1: T, n2: T) -> T:
+        result = self._int_type(n1.unsigned_value | n2.unsigned_value)
+
+        self._set_basic_flags(result)
+        self.carry = self.overflow = False
+
+        return result
+
+
+class Int8ALU(ALU[Int8]):
+    __slots__ = ()
+
+    def __init__(self) -> None:
+        super().__init__(Int8)
+
+
+class Int16ALU(ALU[Int16]):
+    __slots__ = ()
+
+    def __init__(self) -> None:
+        super().__init__(Int16)
 
     def rol(self, n: Int16) -> Int16:
         result = Int16((n.unsigned_value << 1) | (n.unsigned_value >> 15))
-
-        self._set_basic_flags(result)
-        self.carry = self.overflow = False
-
-        return result
-
-    def xor(self, n1: Int16, n2: Int16) -> Int16:
-        result = Int16(n1.unsigned_value ^ n2.unsigned_value)
-
-        self._set_basic_flags(result)
-        self.carry = self.overflow = False
-
-        return result
-
-    def or_(self, n1: Int16, n2: Int16) -> Int16:
-        result = Int16(n1.unsigned_value | n2.unsigned_value)
 
         self._set_basic_flags(result)
         self.carry = self.overflow = False
