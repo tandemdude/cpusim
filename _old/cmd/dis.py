@@ -79,7 +79,9 @@ def decode_memory(cpu: simulator.CPU, include_pc: bool = False) -> str:
 
 
 def run_dis(args: DisArgs) -> None:
-    raw_instructions = parser.parse_dat_file(args.file)
+    with open(args.file) as fp:
+        raw_instructions = parser.parse_dat_file(fp.read())
+
     cpu = simulator.CPU(list(raw_instructions))
 
     output = [

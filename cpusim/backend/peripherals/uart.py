@@ -17,16 +17,37 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-def parse_dat_file(contents: str) -> list[int]:
-    raw_instructions: list[int] = []
-    for line in contents.splitlines():
-        if not line:
-            continue
+import typing as t
 
-        parts = line.split()
-        if len(parts) < 2:
-            continue
+from cpusim.common.types import Int16
 
-        raw_instructions.append(int(parts[1], 2))
+if t.TYPE_CHECKING:
+    from cpusim.backend import simulators
 
-    return raw_instructions
+
+class UART:
+    def __init__(self, cpu: simulators.CPU) -> None:
+        self._cpu = cpu
+        cpu.memory.memmap("uart", [0xFFE, 0xFFF], self.on_read, self.on_write)
+
+        # status bits
+        self.tx_idle = 1
+        self.rx_idle = 1
+        self.rx_data_valid = 1
+        # uart data
+        self.rx_data = Int16(0)
+        self.tx_data_0 = Int16(0)
+        self.tx_data_1 = Int16(0)
+
+    @property
+    def _status(self) -> Int16:
+        return Int16(self.tx_idle << 2 | self.rx_idle << 1 | self.rx_data_valid)
+
+    def on_read(self, address: int) -> Int16:
+        if address == 0xFFE:
+            return self._status
+
+        self.rx_data_valid = 0
+        return self.rx_data
+
+    def on_write(self, address: int, val: Int16) -> None: ...

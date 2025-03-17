@@ -312,7 +312,9 @@ def run_interactive_cli(cpu: simulator.CPU, args: CliArgs) -> int:
 
 
 def run_cli(args: CliArgs) -> None:
-    raw_instructions = parser.parse_dat_file(args.file)
+    with open(args.file) as fp:
+        raw_instructions = parser.parse_dat_file(fp.read())
+
     cpu = simulator.CPU(list(raw_instructions))
 
     elapsed_time: float

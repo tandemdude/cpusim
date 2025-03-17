@@ -17,16 +17,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-def parse_dat_file(contents: str) -> list[int]:
-    raw_instructions: list[int] = []
-    for line in contents.splitlines():
-        if not line:
-            continue
-
-        parts = line.split()
-        if len(parts) < 2:
-            continue
-
-        raw_instructions.append(int(parts[1], 2))
-
-    return raw_instructions

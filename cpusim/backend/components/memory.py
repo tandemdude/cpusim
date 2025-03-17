@@ -17,13 +17,26 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import typing as t
+
 from cpusim.common.types import Int16
 
 __all__ = ["Memory"]
 
+ReadHookFn = t.Callable[[int], Int16]
+"""
+A hook function that can be called on memory read from a mapped address. Takes a single parameter,
+the address written to. Must return the value to be read from that address.
+"""
+WriteHookFn = t.Callable[[int, Int16], None]
+"""
+A hook function that can be called on memory write to a mapped address. Takes two parameters,
+the first is the address written to, the second is the value written.
+"""
+
 
 class Memory:
-    __slots__ = ("_data",)
+    __slots__ = ("_data", "_memmap_addr", "_memmap_hooks")
 
     def __init__(self, initial_data: list[int], max_size: int = 4096) -> None:
         data = list(initial_data)
@@ -31,16 +44,35 @@ class Memory:
         if len(data) < max_size:
             self._data.extend([Int16(0) for _ in range(max_size - len(data))])
 
+        self._memmap_addr: dict[int, str] = {}
+        self._memmap_hooks: dict[str, tuple[ReadHookFn, WriteHookFn]] = {}
+
     def __repr__(self) -> str:
         return f"Memory(...{len(self._data)} entries)"
 
+    def memmap(self, id: str, addrs: t.Collection[int], on_read: ReadHookFn, on_write: WriteHookFn) -> None:
+        for i in addrs:
+            self._memmap_addr[i] = id
+
+        self._memmap_hooks[id] = (on_read, on_write)
+
+    def unmemmap(self, id: str) -> None:
+        self._memmap_addr = {addr: id_ for addr, id_ in self._memmap_addr.items() if id_ != id}
+        del self._memmap_hooks[id]
+
     def get(self, address: int) -> Int16:
+        if address in self._memmap_addr:
+            return self._memmap_hooks[self._memmap_addr[address]][0](address)
+
         if address >= len(self._data):
             raise ValueError("Address out of bounds")
 
         return self._data[address]
 
     def set(self, address: int, value: Int16) -> None:
+        if address in self._memmap_addr:
+            return self._memmap_hooks[self._memmap_addr[address]][1](address, value)
+
         if address >= len(self._data):
             raise ValueError("Address out of bounds")
 
