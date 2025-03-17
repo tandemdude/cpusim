@@ -32,10 +32,10 @@ InstructionT = t.TypeVar("InstructionT", base.Instruction1a, base.Instruction1d)
 class CPU(abc.ABC, t.Generic[InstructionT]):
     __slots__ = ("ir", "memory", "pc")
 
-    def __init__(self, mem: list[int] | None = None) -> None:
+    def __init__(self, mem: list[int] | None = None, max_mem: int = 4096) -> None:
         self.pc = components.IntRegister()
         self.ir = components.IntRegister()
-        self.memory = components.Memory(mem or [])
+        self.memory = components.Memory(mem or [], max_mem)
 
     @property
     @abc.abstractmethod
@@ -79,7 +79,7 @@ class CPU1a(CPU[base.Instruction1a]):
     INSTRUCTION_SET = instruction_sets.INSTRUCTION_SET_1A
 
     def __init__(self, mem: list[int] | None = None) -> None:
-        super().__init__(mem)
+        super().__init__(mem, 256)
 
         self.acc = components.IntRegister()
         self.alu = components.Int8ALU()

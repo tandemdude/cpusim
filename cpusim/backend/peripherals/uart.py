@@ -25,10 +25,22 @@ if t.TYPE_CHECKING:
     from cpusim.backend import simulators
 
 
+class UARTConfig(t.NamedTuple):
+    word_0: int
+    word_1: int
+
+
+DEFAULT_CONFIG = UARTConfig(0xFFE, 0xFFF)
+
+
 class UART:
-    def __init__(self, cpu: simulators.CPU) -> None:
+    __slots__ = ("_cpu", "_cfg", "tx_idle", "rx_idle", "rx_data_valid", "rx_data", "tx_data_0", "tx_data_1")
+
+    def __init__(self, cpu: simulators.CPU[t.Any], cfg: UARTConfig = DEFAULT_CONFIG) -> None:
         self._cpu = cpu
-        cpu.memory.memmap("uart", [0xFFE, 0xFFF], self.on_read, self.on_write)
+        cpu.memory.memmap("uart", [cfg.word_0, cfg.word_1], self.on_read, self.on_write)
+
+        self._cfg = cfg
 
         # status bits
         self.tx_idle = 1

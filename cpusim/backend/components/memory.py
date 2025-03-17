@@ -50,6 +50,10 @@ class Memory:
     def __repr__(self) -> str:
         return f"Memory(...{len(self._data)} entries)"
 
+    @property
+    def size(self) -> int:
+        return len(self._data)
+
     def memmap(self, id: str, addrs: t.Collection[int], on_read: ReadHookFn, on_write: WriteHookFn) -> None:
         for i in addrs:
             self._memmap_addr[i] = id
