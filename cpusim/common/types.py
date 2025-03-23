@@ -54,6 +54,15 @@ class FixedWidthInt(abc.ABC):
             + ")"
         )
 
+    def __eq__(self, other: t.Any) -> bool:
+        if isinstance(other, FixedWidthInt):
+            return self._value == other._value
+
+        if isinstance(other, int):
+            return self.unsigned_value == other if other >= 0 else self.signed_value == other
+
+        return NotImplemented
+
     def __add__(self, other: t.Any) -> t_ex.Self:
         if not isinstance(other, self.__class__):
             raise TypeError(f"Cannot add {type(other)} to {self.__class__.__name__}")

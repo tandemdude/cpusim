@@ -17,6 +17,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
+
 import typing as t
 
 from cpusim.common.types import Int16
@@ -34,7 +36,7 @@ DEFAULT_CONFIG = UARTConfig(0xFFE, 0xFFF)
 
 
 class UART:
-    __slots__ = ("_cpu", "_cfg", "tx_idle", "rx_idle", "rx_data_valid", "rx_data", "tx_data_0", "tx_data_1")
+    __slots__ = ("_cfg", "_cpu", "rx_data", "rx_data_valid", "rx_idle", "tx_data_0", "tx_data_1", "tx_idle")
 
     def __init__(self, cpu: simulators.CPU[t.Any], cfg: UARTConfig = DEFAULT_CONFIG) -> None:
         self._cpu = cpu

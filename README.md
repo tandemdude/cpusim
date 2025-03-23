@@ -32,3 +32,37 @@
 - set breakpoint
   - conditional breakpoints?
 - exit / quit / stop / halt
+
+
+## GDB - aligned commands
+- `info` `i`
+  - `registers` `r`
+  - `break` `b`
+  - `memory` `m`
+
+- `step` `s`
+  - `N` - number of instructions to step
+- `continue` `c` - run until next breakpoint is hit
+
+- `break` `b`
+  - `int` - when PC = val
+  - `if cond`
+- `delete` `d`
+  - `n` - delete breakpoint with ID `n`
+- `enable` `e`
+  - `n` - enable breakpoint with ID `n`
+- `disable`
+  - `n` - disable breakpoint with ID `n`
+
+- `quit` `q`
+- `help`
+
+- `disassemble` `dis`
+  - register name
+  - address (hex)
+- `print` `p`
+  - format specifier?
+  - register name
+  - memory address
+
+TODO - consider implementing assembler with debug symbols

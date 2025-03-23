@@ -51,7 +51,7 @@ class CPU(abc.ABC, t.Generic[InstructionT]):
     def execute(self, instruction: InstructionT, args: tuple[int, ...]) -> None:
         instruction.execute(args, self)  # type: ignore[reportArgumentType]
 
-    def step(self, *, detect_halt_loop: bool = False) -> bool:
+    def step(self, *, detect_halt_loop: bool = True) -> bool:
         self.fetch()
         instruction, args = self.decode()
 
@@ -97,7 +97,7 @@ class CPU1a(CPU[base.Instruction1a]):
         if instruction is None:
             raise NotImplementedError(f"Unknown opcode {opcode}")
 
-        arg = raw_instruction & 0xFFFF
+        arg = raw_instruction & 0xFF
         # immediate addressing mode args require the leading 0 for compatibility with v1d - v1a instructions
         # will ignore this value
         args = (0, arg) if instruction.addressing_mode is base.AddressingMode.IMMEDIATE else (arg,)

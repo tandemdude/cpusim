@@ -67,7 +67,7 @@ def typecheck(session: nox.Session) -> None:
 @nox_session()
 def slotscheck(session: nox.Session) -> None:
     session.install("-U", ".[dev.slotscheck]")
-    session.run("python", "-m", "slotscheck", "-m", "cpusim")
+    session.run("python", "-m", "slotscheck", "-m", "cpusim", "-v")
 
 
 @nox_session()

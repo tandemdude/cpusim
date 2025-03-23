@@ -50,6 +50,23 @@ class Memory:
     def __repr__(self) -> str:
         return f"Memory(...{len(self._data)} entries)"
 
+    def __getitem__(self, item: int | slice) -> Int16:
+        if isinstance(item, slice):
+            raise ValueError("Memory.__getitem__ does not support slicing")
+
+        return self.get(item)
+
+    def __setitem__(self, item: int | slice, value: t.Any) -> None:
+        if isinstance(item, slice):
+            raise ValueError("Memory.__setitem__ does not support slicing")
+        if not isinstance(value, (Int16, int)):
+            raise ValueError
+
+        if isinstance(value, int):
+            value = Int16(value)
+
+        self.set(item, value)
+
     @property
     def size(self) -> int:
         return len(self._data)

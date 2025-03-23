@@ -21,30 +21,26 @@ from __future__ import annotations
 
 import typing as t
 
+from cpusim.backend import simulators
+from cpusim.frontend.cli.interactive import runner
+
 if t.TYPE_CHECKING:
-    from cpusim.backend import simulators
-    from cpusim.common.types import Int16
+    from cpusim.__main__ import CliArguments
 
 
-class GPIOConfig(t.NamedTuple):
-    ports: int
-    map_to: int
+def run_cli(args: CliArguments, mem: list[int]) -> None:
+    cpu = simulators.CPU1a(mem) if args.arch == "1a" else simulators.CPU1d(mem)
 
+    if not args.interactive:
+        # run steps, dump processor state at the end
+        ...
 
-DEFAULT_CONFIG = GPIOConfig(2, 0xFC)
+    i_runner = runner.CPU1aInteractiveDebugger(cpu) if args.arch == "1a" else runner.CPU1dInteractiveDebugger(cpu)  # type: ignore[reportArgumentType]
+    # do interactive mode i/o
+    print("Welcome to the interactive debugger!\n    '-h' or '--help' to show commands\n    'quit' to quit")
+    while not i_runner.halted:
+        command = input("(adb) ")
 
-
-class GPIO:
-    __slots__ = ("_cfg", "_cpu", "devices")
-
-    def __init__(self, cpu: simulators.CPU[t.Any], cfg: GPIOConfig = DEFAULT_CONFIG) -> None:
-        self._cpu = cpu
-        cpu.memory.memmap("gpio", list(range(cfg.map_to, cfg.map_to + (2 * cfg.ports))), self.on_read, self.on_write)
-
-        self._cfg = cfg
-
-        self.devices: list[None] = [None for _ in range(cfg.ports)]
-
-    def on_read(self, address: int) -> Int16: ...
-
-    def on_write(self, address: int, val: Int16) -> None: ...
+        out = i_runner.execute_command(command)
+        if out is not None:
+            print(out)

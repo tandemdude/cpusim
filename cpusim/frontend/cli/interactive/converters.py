@@ -17,34 +17,43 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import annotations
+import dataclasses
+import re
 
-import typing as t
-
-if t.TYPE_CHECKING:
-    from cpusim.backend import simulators
-    from cpusim.common.types import Int16
-
-
-class GPIOConfig(t.NamedTuple):
-    ports: int
-    map_to: int
+_dec_hex_bin = r"\d+|0x[0-9a-f]+|0b[01]+"
+_reg = r"r[a-z]|pc|acc|ir"
+_REGISTER_OR_ADDR = re.compile(rf"(?P<addr>{_dec_hex_bin})|(?P<reg>{_reg})")
 
 
-DEFAULT_CONFIG = GPIOConfig(2, 0xFC)
+@dataclasses.dataclass(slots=True)
+class Address:
+    value: int
 
 
-class GPIO:
-    __slots__ = ("_cfg", "_cpu", "devices")
+@dataclasses.dataclass(slots=True)
+class Register:
+    attr_name: str
+    register_name: str
+    id: int
 
-    def __init__(self, cpu: simulators.CPU[t.Any], cfg: GPIOConfig = DEFAULT_CONFIG) -> None:
-        self._cpu = cpu
-        cpu.memory.memmap("gpio", list(range(cfg.map_to, cfg.map_to + (2 * cfg.ports))), self.on_read, self.on_write)
 
-        self._cfg = cfg
+def number_string_to_int(number_string: str) -> int:
+    if number_string.startswith("0x"):
+        return int(number_string, 16)
+    elif number_string.startswith("0b"):
+        return int(number_string, 2)
+    return int(number_string)
 
-        self.devices: list[None] = [None for _ in range(cfg.ports)]
 
-    def on_read(self, address: int) -> Int16: ...
+def parse_address_or_register(s: str) -> Address | Register:
+    if (match := _REGISTER_OR_ADDR.fullmatch(s)) is None:
+        raise ValueError(f"could not parse address or register name from '{s}'")
 
-    def on_write(self, address: int, val: Int16) -> None: ...
+    if (addr := match.group("addr")) is not None:
+        return Address(number_string_to_int(addr))
+
+    reg = match.group("reg")
+    assert reg is not None
+
+    reg_id = -1 if not reg.startswith("r") else (ord(reg[1]) - ord("a"))
+    return Register("registers" if reg.startswith("r") else reg, reg, reg_id)
