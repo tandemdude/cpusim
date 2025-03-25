@@ -20,6 +20,7 @@
 import abc
 import dataclasses
 import shlex
+import traceback
 import typing as t
 from argparse import ArgumentError
 
@@ -57,17 +58,6 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
 
         self.halted = False
 
-    @abc.abstractmethod
-    def info_registers(self) -> str: ...
-
-    def info_memory(self) -> str: ...
-
-    def info_breakpoints(self) -> str:
-        ...
-
-    @abc.abstractmethod
-    def _conditional_breakpoint_context(self) -> dict[str, t.Any]: ...
-
     def _check_breakpoints(self) -> tuple[bool, int]:
         for id, bp in self._lineno_breakpoints.items():
             if not bp.enabled:
@@ -85,6 +75,111 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
                 return True, id
 
         return False, -1
+
+    def _justify_row(self, row: t.Sequence[str], sizes: t.Sequence[int]) -> str:
+        return " | ".join(cell.ljust(sizes[i]) for i, cell in enumerate(row))
+
+    def _justify_rows(self, rows: t.Sequence[t.Sequence[str]]) -> str:
+        col_widths = [max(len(row[i]) for row in rows) for i in range(len(rows[0]))]
+        justified_rows: list[str] = []
+        for row in rows:
+            justified_rows.append(self._justify_row(row, col_widths))
+
+        return "\n".join(justified_rows)
+
+    def _info_registers(self, registers: dict[str, int]) -> str:
+        rows: list[tuple[str, str, str, str]] = [("Name", "8-bit", "16-bit", "Hex")]
+        for register in registers.items():
+            rows.append(
+                (
+                    register[0],
+                    str(Int8(register[1]).signed_value),
+                    str(Int16(register[1]).signed_value),
+                    hex(register[1]),
+                )
+            )
+
+        return self._justify_rows(rows)
+
+    @abc.abstractmethod
+    def _conditional_breakpoint_context(self) -> dict[str, t.Any]: ...
+
+    @abc.abstractmethod
+    def info_registers(self) -> str: ...
+
+    def info_memory(self) -> str:
+        # addr, 8-bit dec, 16-bit dec, hex, decoded, is_zero
+        old_val = self._cpu.ir.value
+
+        rows: list[tuple[str, str, str, str, str, bool]] = [("Addr", "8-bit", "16-bit", "Hex", "Disassembled", False)]
+        for addr in range(self._cpu.memory.size):
+            if addr in self._cpu.memory._memmap_addr:
+                rows.append((hex(addr), "?", "?", "?", f"mem-mapped ({self._cpu.memory._memmap_addr[addr]})", False))
+                continue
+
+            value = self._cpu.memory.get(addr)
+
+            self._cpu.ir.set(value.unsigned_value)
+            instruction, args = self._cpu.decode()
+
+            rows.append(
+                (
+                    hex(addr),
+                    str(Int8(value.unsigned_value).signed_value),
+                    str(value.signed_value),
+                    hex(value.unsigned_value),
+                    instruction.repr(args),
+                    value.unsigned_value == 0,
+                )
+            )
+
+        col_widths = [max(len(row[i]) for row in rows) for i in range(len(rows[0][:-1]))]  # type: ignore[reportArgumentType]
+        justified_rows: list[str] = []
+
+        zero_addrs: list[str] = []
+        known_zero_row = next(filter(lambda row: row[-1], rows))
+        for row in rows:
+            if row[-1]:
+                zero_addrs.append(row[0])
+                continue
+
+            if len(zero_addrs) > 3:
+                justified_rows.append(f"<-- ... {len(zero_addrs)} zeros -->")
+                zero_addrs = []
+            else:
+                for addr in zero_addrs:
+                    justified_rows.append(self._justify_row([addr, *known_zero_row[1:-1]], col_widths))
+
+            justified_rows.append(self._justify_row(row[:-1], col_widths))
+
+        if zero_addrs:
+            justified_rows.append(f"<-- ... {len(zero_addrs)} zeros -->")
+
+        self._cpu.ir.set(old_val)
+        return "\n".join(justified_rows)
+
+    def info_breakpoints(self) -> str:
+        rows: list[tuple[str, str, str, str]] = [("ID", "Type", "Enabled", "Value")]
+        for id, bp in sorted([*self._lineno_breakpoints.items(), *self._conditional_breakpoints.items()]):
+            rows.append(
+                (
+                    str(id),
+                    "LINE" if isinstance(bp, LineBreakpoint) else "COND",
+                    str(bp.enabled),
+                    str(bp.line) if isinstance(bp, LineBreakpoint) else bp.expr,
+                )
+            )
+
+        return self._justify_rows(rows)
+
+    def info_flags(self) -> str:
+        rows: list[tuple[str, str]] = [("Name", "Value")]
+
+        flag_attrs = ["negative", "positive", "overflow", "carry", "zero"]
+        for attr in flag_attrs:
+            rows.append((attr, str(getattr(self._cpu.alu, attr))))
+
+        return self._justify_rows(rows)
 
     def step(self, n: int) -> str:
         out: list[str] = []
@@ -138,7 +233,7 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
     def breakpoint(
         self,
         subcommand: t.Literal["create", "delete", "enable", "disable"],
-        expr: str | None = None,
+        expr: list[str] | None = None,
         line: int | None = None,
         bp_id: int | None = None,
     ) -> str:
@@ -147,7 +242,14 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
 
         if subcommand == "create":
             if expr is not None:
-                self._conditional_breakpoints[self._next_breakpoint_id] = ConditionalBreakpoint(expr, True)
+                bp_expr = "".join(expr)
+
+                try:
+                    compile(bp_expr, "<string>", "eval")
+                except SyntaxError as e:
+                    return f"Invalid expression syntax:\n{traceback.format_exception(e, limit=0)}"
+
+                self._conditional_breakpoints[self._next_breakpoint_id] = ConditionalBreakpoint(bp_expr, True)
             elif line is not None:
                 self._lineno_breakpoints[self._next_breakpoint_id] = LineBreakpoint(line, True)
 
@@ -185,7 +287,7 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
 
         instruction, args = self._cpu.decode()
         self._cpu.ir.set(old_ir_value)
-        out.append(instruction.repr(args))
+        out.append("    " + instruction.repr(args))
 
         return "\n".join(out)
 
@@ -229,7 +331,9 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
                     return self.info_registers()
                 elif arguments.item == "breakpoints":
                     return self.info_breakpoints()
-                return self.info_memory()
+                elif arguments.item == "memory":
+                    return self.info_memory()
+                return self.info_flags()
             case "step":
                 assert arguments.number is not None
                 return self.step(arguments.number)
@@ -256,7 +360,14 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
 class CPU1aInteractiveDebugger(InteractiveDebugger[simulators.CPU1a]):
     __slots__ = ()
 
-    def info_registers(self) -> str: ...
+    def info_registers(self) -> str:
+        return super()._info_registers(
+            {
+                "pc": self._cpu.pc.value,
+                "ir": self._cpu.ir.value,
+                "acc": self._cpu.acc.value,
+            }
+        )
 
     def _conditional_breakpoint_context(self) -> dict[str, t.Any]:
         return {
@@ -271,7 +382,15 @@ class CPU1aInteractiveDebugger(InteractiveDebugger[simulators.CPU1a]):
 class CPU1dInteractiveDebugger(InteractiveDebugger[simulators.CPU1d]):
     __slots__ = ()
 
-    def info_registers(self) -> str: ...
+    def info_registers(self) -> str:
+        registers: dict[str, t.Any] = {
+            "pc": self._cpu.pc.value,
+            "ir": self._cpu.ir.value,
+        }
+        for i in range(self._cpu.registers._register_limit):
+            registers[f"r{chr(ord('a') + i)}"] = self._cpu.registers.get(i).unsigned_value
+
+        return self._info_registers(registers)
 
     def _conditional_breakpoint_context(self) -> dict[str, t.Any]:
         out: dict[str, t.Any] = {

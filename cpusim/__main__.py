@@ -40,16 +40,17 @@ cli_parser.add_argument(
     help="the SimpleCPU architecture version to use - defaults to '1a'",
     default="1a",
 )
-cli_parser.add_argument(
+
+grp = cli_parser.add_mutually_exclusive_group(required=True)
+grp.add_argument(
     "--steps",
     "-s",
     action="store",
-    nargs=1,
     type=int,
     metavar="N",
     help="the number of steps (instructions) to simulate",
 )
-cli_parser.add_argument(
+grp.add_argument(
     "--interactive",
     "-i",
     action="store_true",

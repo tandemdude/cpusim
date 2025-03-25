@@ -59,7 +59,7 @@ class _CustomHelpAction(argparse.Action):
 root_args = _default_parser_args("SimpleCPU assembly debugger (adb)")
 del root_args["help"]
 
-root_parser = argparse.ArgumentParser(prog="(adb)", **root_args)
+root_parser = argparse.ArgumentParser(prog="(idb)", **root_args)
 _CustomHelpAction.add_to(root_parser)
 
 subparsers = root_parser.add_subparsers(title="commands", dest="command")
@@ -76,7 +76,7 @@ info_parser.add_argument(
     "item",
     metavar="ITEM",
     type=str,
-    choices=["registers", "breakpoints", "memory"],
+    choices=["registers", "breakpoints", "memory", "flags"],
     help="The item to show state for",
 )
 
@@ -158,10 +158,10 @@ print_parser.add_argument(
 class Arguments(argparse.Namespace):
     help: bool | None
     command: t.Literal["quit", "info", "step", "continue", "breakpoint", "disassemble", "print"] | None
-    item: t.Literal["registers", "breakpoints", "memory"] | None
+    item: t.Literal["registers", "breakpoints", "memory", "flags"] | None
     number: int | None
     breakpoint_subcommand: t.Literal["create", "delete", "enable", "disable"] | None
-    breakpoint_create_expr: str | None
+    breakpoint_create_expr: list[str] | None
     breakpoint_create_line: int | None
     id: int | None
     target: converters.Address | converters.Register | None

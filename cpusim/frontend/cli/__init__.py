@@ -31,16 +31,40 @@ if t.TYPE_CHECKING:
 def run_cli(args: CliArguments, mem: list[int]) -> None:
     cpu = simulators.CPU1a(mem) if args.arch == "1a" else simulators.CPU1d(mem)
 
-    if not args.interactive:
-        # run steps, dump processor state at the end
-        ...
-
     i_runner = runner.CPU1aInteractiveDebugger(cpu) if args.arch == "1a" else runner.CPU1dInteractiveDebugger(cpu)  # type: ignore[reportArgumentType]
-    # do interactive mode i/o
-    print("Welcome to the interactive debugger!\n    '-h' or '--help' to show commands\n    'quit' to quit")
-    while not i_runner.halted:
-        command = input("(adb) ")
+    if not args.interactive:
+        # run requested number of steps
+        instructions_run, halted = 0, False
+        assert args.steps is not None
+        for _ in range(args.steps):
+            instructions_run += 1
+            halted = cpu.step()
 
-        out = i_runner.execute_command(command)
-        if out is not None:
-            print(out)
+            if halted:
+                break
+
+        if halted:
+            print(
+                f"Executed {instructions_run} instructions\n"
+                f"Halt-loop reached at address {hex(cpu.pc.value)}. Exiting..."
+            )
+        else:
+            print(f"Executed {instructions_run} instructions")
+    else:
+        # do interactive mode i/o
+        print("Welcome to the interactive debugger!\n    '-h' or '--help' to show commands\n    'quit' to quit")
+        while not i_runner.halted:
+            command = input("(idb) ")
+
+            out = i_runner.execute_command(command)
+            if out is not None:
+                print(out)
+
+    # dump processor state
+    print("\n== Final processor state ==")
+    print("\nMemory:")
+    print(i_runner.info_memory())
+    print("\nRegisters:")
+    print(i_runner.info_registers())
+    print("\nFlags:")
+    print(i_runner.info_flags())
