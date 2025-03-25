@@ -22,6 +22,7 @@ import typing as t
 
 from cpusim.common import parser
 from cpusim.frontend import cli
+from cpusim.frontend import gui
 
 root_parser = argparse.ArgumentParser()
 root_subparsers = root_parser.add_subparsers(dest="command")
@@ -87,3 +88,5 @@ with open(file) as f:
 
 if args.command == "cli":
     cli.run_cli(args, machine_code)
+else:
+    gui.run_gui(args, machine_code)
