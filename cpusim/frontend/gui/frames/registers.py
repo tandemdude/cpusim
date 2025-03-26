@@ -21,11 +21,12 @@ from __future__ import annotations
 
 import tkinter as tk
 import typing as t
-from tkinter import ttk
+from tkinter import messagebox
 
 from cpusim.backend import simulators
 from cpusim.common.types import Int8
 from cpusim.common.types import Int16
+from cpusim.frontend.gui.components import treeview
 
 CpuT = t.TypeVar("CpuT", simulators.CPU1a, simulators.CPU1d)
 
@@ -37,7 +38,9 @@ class RegistersFrame(tk.LabelFrame, t.Generic[CpuT]):
         self.cpu = cpu
 
         cols = ("Name", "8-bit", "16-bit", "Hex")
-        self._tree = ttk.Treeview(self, columns=cols, show="headings")
+        self._tree = treeview.EditableTreeView(
+            "Hex", 3, self.on_cell_edit, self, exclude_iids=("divider",), columns=cols, show="headings"
+        )
 
         for col in cols:
             self._tree.heading(col, text=col)
@@ -47,20 +50,42 @@ class RegistersFrame(tk.LabelFrame, t.Generic[CpuT]):
 
         self.refresh()
 
+    def on_cell_edit(self, iid: str, new_val: str) -> None:
+        try:
+            parsed_val = int(new_val.lower().strip("0x"), 16)
+        except ValueError:
+            messagebox.showerror("Invalid hex value", f"{new_val!r} is not a valid hex number")
+            return
+
+        if iid == "pc":
+            self.cpu.pc.set(Int16(parsed_val))
+        elif iid == "ir":
+            self.cpu.ir.set(Int16(parsed_val))
+        elif iid == "acc":
+            self.cpu.acc.set(Int8(parsed_val).unsigned_value)
+        else:
+            # set general purpose registers
+            self.cpu.registers.set(ord(iid[1]) - ord("a"), Int16(parsed_val))
+
+        self.refresh()
+
     def refresh(self) -> None:
         for iid in self._tree.get_children():
             self._tree.delete(iid)
 
         def _insert(name: str, val: int) -> None:
             self._tree.insert(
-                "", "end", values=(name, str(Int8(val).signed_value), str(Int16(val).signed_value), f"0x{val:04x}")
+                "",
+                "end",
+                iid=name,
+                values=(name, str(Int8(val).signed_value), str(Int16(val).signed_value), f"0x{val:04x}"),
             )
 
         _insert("pc", self.cpu.pc.value)
         _insert("ir", self.cpu.ir.value)
 
         # divider line
-        self._tree.insert("", "end", values=("--", "--", "--", "--"))
+        self._tree.insert("", "end", iid="divider", values=("--", "--", "--", "--"))
 
         if isinstance(self.cpu, simulators.CPU1a):
             _insert("acc", self.cpu.acc.value)
