@@ -36,8 +36,6 @@ the first is the address written to, the second is the value written.
 
 
 class Memory:
-    __slots__ = ("_data", "_memmap_addr", "_memmap_hooks")
-
     def __init__(self, initial_data: list[int], max_size: int = 4096) -> None:
         data = list(initial_data)
         self._data: list[Int16] = [Int16(v) for v in data[:max_size]]

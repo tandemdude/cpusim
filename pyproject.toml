@@ -94,6 +94,13 @@ convention = "google"
 strict-imports = true
 require-superclass = true
 require-subclass = true
+exclude-classes = """
+(
+    ^cpusim\\.backend\\.components\\.memory:Memory$
+    |^cpusim\\.backend\\.components\\.registers:IntRegister$
+    |^cpusim\\.backend\\.components\\.registers:Registers$
+)
+"""
 
 [tool.pyright]
 include = ["cpusim"]

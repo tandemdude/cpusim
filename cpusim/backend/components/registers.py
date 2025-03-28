@@ -25,8 +25,6 @@ __all__ = ["IntRegister", "Registers"]
 
 
 class IntRegister:
-    __slots__ = ("_val",)
-
     def __init__(self) -> None:
         self._val = 0
 
@@ -45,11 +43,6 @@ class IntRegister:
 
 
 class Registers:
-    __slots__ = (
-        "_register_limit",
-        "_values",
-    )
-
     def __init__(self, register_limit: int) -> None:
         self._register_limit = register_limit
         self._values: collections.defaultdict[int, Int16] = collections.defaultdict(lambda: Int16(0))

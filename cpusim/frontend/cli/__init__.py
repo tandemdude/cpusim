@@ -19,6 +19,8 @@
 # SOFTWARE.
 from __future__ import annotations
 
+__all__ = ["run_cli"]
+
 import typing as t
 
 from cpusim.backend import simulators
@@ -31,7 +33,7 @@ if t.TYPE_CHECKING:
 def run_cli(args: CliArguments, mem: list[int]) -> None:
     cpu = simulators.CPU1a(mem) if args.arch == "1a" else simulators.CPU1d(mem)
 
-    i_runner = runner.CPU1aInteractiveDebugger(cpu) if args.arch == "1a" else runner.CPU1dInteractiveDebugger(cpu)  # type: ignore[reportArgumentType]
+    debugger = runner.CPU1aInteractiveDebugger(cpu) if args.arch == "1a" else runner.CPU1dInteractiveDebugger(cpu)  # type: ignore[reportArgumentType]
     if not args.interactive:
         # run requested number of steps
         instructions_run, halted = 0, False
@@ -53,18 +55,18 @@ def run_cli(args: CliArguments, mem: list[int]) -> None:
     else:
         # do interactive mode i/o
         print("Welcome to the interactive debugger!\n    '-h' or '--help' to show commands\n    'quit' to quit")
-        while not i_runner.halted:
+        while not debugger.halted:
             command = input("(idb) ")
 
-            out = i_runner.execute_command(command)
+            out = debugger.execute_command(command)
             if out is not None:
                 print(out)
 
     # dump processor state
     print("\n== Final processor state ==")
     print("\nMemory:")
-    print(i_runner.info_memory())
+    print(debugger.info_memory())
     print("\nRegisters:")
-    print(i_runner.info_registers())
+    print(debugger.info_registers())
     print("\nFlags:")
-    print(i_runner.info_flags())
+    print(debugger.info_flags())

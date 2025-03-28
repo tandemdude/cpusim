@@ -17,22 +17,31 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import annotations
-
-__all__ = ["run_gui"]
-
+import abc
+import dataclasses
+import tkinter as tk
 import typing as t
 
 from cpusim.backend import simulators
 from cpusim.frontend.cli.interactive import runner
-from cpusim.frontend.gui import app
 
-if t.TYPE_CHECKING:
-    from cpusim.__main__ import CliArguments
+CpuT = t.TypeVar("CpuT", simulators.CPU1a, simulators.CPU1d)
 
 
-def run_gui(args: CliArguments, mem: list[int]) -> None:
-    cpu = simulators.CPU1a(mem) if args.arch == "1a" else simulators.CPU1d(mem)
-    debugger = runner.CPU1aInteractiveDebugger(cpu) if args.arch == "1a" else runner.CPU1dInteractiveDebugger(cpu)
+@dataclasses.dataclass(slots=True)
+class AppState(t.Generic[CpuT]):
+    cpu: CpuT
+    debugger: runner.InteractiveDebugger[CpuT]
+    halted: bool
 
-    app.GuiApp(cpu, debugger).run()  # type: ignore[reportArgumentType]
+    state_var: tk.StringVar = dataclasses.field(init=False, default_factory=tk.StringVar)
+    breakpoint_var: tk.StringVar = dataclasses.field(init=False, default_factory=tk.StringVar)
+
+
+class AppFrame(tk.LabelFrame, t.Generic[CpuT], abc.ABC):
+    def __init__(self, master: tk.Frame | tk.Tk, state: AppState[CpuT], **kwargs) -> None:
+        super().__init__(master, **kwargs)
+        self.state = state
+
+    @abc.abstractmethod
+    def refresh(self) -> None: ...

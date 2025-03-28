@@ -19,6 +19,7 @@
 # SOFTWARE.
 from __future__ import annotations
 
+import functools
 import tkinter as tk
 import typing as t
 from tkinter import messagebox
@@ -26,16 +27,13 @@ from tkinter import messagebox
 from cpusim.backend import simulators
 from cpusim.common.types import Int8
 from cpusim.common.types import Int16
+from cpusim.frontend.gui import base
 from cpusim.frontend.gui.components import treeview
 
-CpuT = t.TypeVar("CpuT", simulators.CPU1a, simulators.CPU1d)
 
-
-class RegistersFrame(tk.LabelFrame, t.Generic[CpuT]):
-    def __init__(self, root: tk.Frame, cpu: CpuT) -> None:
-        super().__init__(root, text="Registers")
-
-        self.cpu = cpu
+class RegistersFrame(base.AppFrame[base.CpuT]):
+    def __init__(self, master: tk.Frame | tk.Tk, state: base.AppState[base.CpuT]) -> None:
+        super().__init__(master, state, text="Registers")
 
         cols = ("Name", "8-bit", "16-bit", "Hex")
         self._tree = treeview.EditableTreeView(
@@ -48,7 +46,26 @@ class RegistersFrame(tk.LabelFrame, t.Generic[CpuT]):
 
         self._tree.pack(fill=tk.BOTH, expand=True)
 
+        if isinstance(self.state.cpu, simulators.CPU1a):
+            self.state.cpu.acc.set = functools.partial(
+                self._monkeypatched_int_register_set, name="acc", orig=self.state.cpu.acc.set
+            )
+        else:
+            self.state.cpu.registers.set = functools.partial(
+                self._monkeypatched_gp_register_set, orig=self.state.cpu.registers.set
+            )
+
+        self._modified_registers: list[str] = []
+
         self.refresh()
+
+    def _monkeypatched_int_register_set(self, val: int, name: str, orig: t.Callable[[int], None]) -> None:
+        self._modified_registers.append(name)
+        orig(val)
+
+    def _monkeypatched_gp_register_set(self, idx: int, val: Int16, orig: t.Callable[[int, Int16], None]) -> None:
+        self._modified_registers.append(f"r{chr(ord('a') + idx)}")
+        orig(idx, val)
 
     def on_cell_edit(self, iid: str, new_val: str) -> None:
         try:
@@ -58,14 +75,14 @@ class RegistersFrame(tk.LabelFrame, t.Generic[CpuT]):
             return
 
         if iid == "pc":
-            self.cpu.pc.set(Int16(parsed_val))
+            self.state.cpu.pc.set(Int16(parsed_val))
         elif iid == "ir":
-            self.cpu.ir.set(Int16(parsed_val))
+            self.state.cpu.ir.set(Int16(parsed_val))
         elif iid == "acc":
-            self.cpu.acc.set(Int8(parsed_val).unsigned_value)
+            self.state.cpu.acc.set(Int8(parsed_val).unsigned_value)
         else:
             # set general purpose registers
-            self.cpu.registers.set(ord(iid[1]) - ord("a"), Int16(parsed_val))
+            self.state.cpu.registers.set(ord(iid[1]) - ord("a"), Int16(parsed_val))
 
         self.refresh()
 
@@ -81,14 +98,18 @@ class RegistersFrame(tk.LabelFrame, t.Generic[CpuT]):
                 values=(name, str(Int8(val).signed_value), str(Int16(val).signed_value), f"0x{val:04x}"),
             )
 
-        _insert("pc", self.cpu.pc.value)
-        _insert("ir", self.cpu.ir.value)
+        _insert("pc", self.state.cpu.pc.value)
+        _insert("ir", self.state.cpu.ir.value)
 
         # divider line
         self._tree.insert("", "end", iid="divider", values=("--", "--", "--", "--"))
 
-        if isinstance(self.cpu, simulators.CPU1a):
-            _insert("acc", self.cpu.acc.value)
+        if isinstance(self.state.cpu, simulators.CPU1a):
+            _insert("acc", self.state.cpu.acc.value)
         else:
-            for i in range(self.cpu.registers._register_limit):
-                _insert(f"r{chr(ord('a') + i)}", self.cpu.registers.get(i).unsigned_value)
+            for i in range(self.state.cpu.registers._register_limit):
+                _insert(f"r{chr(ord('a') + i)}", self.state.cpu.registers.get(i).unsigned_value)
+
+        for reg in self._modified_registers:
+            self._tree.item(reg, tags="write")
+        self._modified_registers = []

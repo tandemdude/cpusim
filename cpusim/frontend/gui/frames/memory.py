@@ -20,26 +20,20 @@
 from __future__ import annotations
 
 import tkinter as tk
-import typing as t
 from tkinter import messagebox
 from tkinter import ttk
 
-from cpusim.backend import simulators
 from cpusim.common.types import Int8
 from cpusim.common.types import Int16
+from cpusim.frontend.gui import base
 from cpusim.frontend.gui.components import treeview
 
-CpuT = t.TypeVar("CpuT", simulators.CPU1a, simulators.CPU1d)
 
+class MemoryFrame(base.AppFrame[base.CpuT]):
+    def __init__(self, master: tk.Frame | tk.Tk, state: base.AppState[base.CpuT]) -> None:
+        super().__init__(master, state, text="Memory")
 
-class MemoryFrame(tk.LabelFrame, t.Generic[CpuT]):
-    def __init__(self, root: tk.Frame, cpu: CpuT) -> None:
-        super().__init__(root, text="Memory")
-
-        self._util_cpu: CpuT = cpu.__class__()
-
-        self.pc = cpu.pc
-        self.mem = cpu.memory
+        self._util_cpu: base.CpuT = state.cpu.__class__()
 
         cols = ("Addr", "8-bit", "16-bit", "Hex", "Instr")
         self._tree = treeview.EditableTreeView("Hex", 3, self.on_cell_edit, self, columns=cols, show="headings")
@@ -55,7 +49,17 @@ class MemoryFrame(tk.LabelFrame, t.Generic[CpuT]):
         self._scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self._tree.pack(fill=tk.BOTH, expand=True)
 
+        # monkeypatch out the write method so we can highlight rows that have been written to
+        self._old_memory_set = self.state.cpu.memory.set
+        self.state.cpu.memory.set = self._monkeypatched_memory_set
+
+        self._written_rows: list[int] = []
+
         self.refresh()
+
+    def _monkeypatched_memory_set(self, addr: int, val: Int16) -> None:
+        self._written_rows.append(addr)
+        self._old_memory_set(addr, val)
 
     def on_cell_edit(self, iid: str, new_val: str) -> None:
         # check if valid hex
@@ -66,16 +70,15 @@ class MemoryFrame(tk.LabelFrame, t.Generic[CpuT]):
             return
 
         memory_addr = int(iid.strip("mem_0x"), 16)
-        self.mem.set(memory_addr, Int16(new_int_val))
-        # TODO - we can get away with refreshing only the single row here instead
+        self.state.cpu.memory.set(memory_addr, Int16(new_int_val))
         self.refresh()
 
     def refresh(self) -> None:
         for iid in self._tree.get_children():
             self._tree.delete(iid)
 
-        for i in range(self.mem.size):
-            value = self.mem.get(i)
+        for i in range(self.state.cpu.memory.size):
+            value = self.state.cpu.memory.get(i)
 
             self._util_cpu.ir.set(value.unsigned_value)
 
@@ -98,4 +101,8 @@ class MemoryFrame(tk.LabelFrame, t.Generic[CpuT]):
                 ),
             )
 
-        self._tree.selection_set("mem_" + hex(self.pc.value))
+        self._tree.item("mem_" + hex(self.state.cpu.pc.value), tags="pc")
+
+        for addr in self._written_rows:
+            self._tree.item("mem_" + hex(addr), tags="write")
+        self._written_rows = []

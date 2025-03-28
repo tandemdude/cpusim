@@ -21,17 +21,14 @@ from __future__ import annotations
 
 import functools
 import tkinter as tk
-import typing as t
 
-if t.TYPE_CHECKING:
-    from cpusim.backend.components import alu as alu_
+from cpusim.frontend.gui import base
 
 
-class FlagsFrame(tk.LabelFrame):
-    def __init__(self, root: tk.Frame, alu: alu_.ALU[t.Any]) -> None:
-        super().__init__(root, text="ALU Flags")
+class FlagsFrame(base.AppFrame[base.CpuT]):
+    def __init__(self, master: tk.Frame | tk.Tk, state: base.AppState[base.CpuT]) -> None:
+        super().__init__(master, state, text="ALU Flags")
 
-        self.alu = alu
         self.vars: dict[str, tk.IntVar] = {
             "negative": tk.IntVar(),
             "positive": tk.IntVar(),
@@ -56,8 +53,8 @@ class FlagsFrame(tk.LabelFrame):
         self.refresh()
 
     def _on_toggle(self, flag: str) -> None:
-        setattr(self.alu, flag, bool(self.vars[flag].get()))
+        setattr(self.state.cpu.alu, flag, bool(self.vars[flag].get()))
 
     def refresh(self) -> None:
         for name, var in self.vars.items():
-            var.set(int(getattr(self.alu, name)))
+            var.set(int(getattr(self.state.cpu.alu, name)))

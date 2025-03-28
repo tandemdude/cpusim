@@ -33,7 +33,7 @@ class EntryPopup(ttk.Entry):
         self._iid = iid
         self.insert(0, text)
 
-        self["exportselection"] = False
+        self.configure(exportselection=False)
 
         self.focus_force()
         self.select_all()
@@ -69,6 +69,9 @@ class EditableTreeView(ttk.Treeview):
         self.exclude_iids = exclude_iids
 
         self._entry_popup: EntryPopup | None = None
+
+        self.tag_configure("pc", background="ivory3")
+        self.tag_configure("write", background="orange")
 
     def on_double_click(self, event: tk.Event[t.Any]) -> None:
         if self._entry_popup is not None:
