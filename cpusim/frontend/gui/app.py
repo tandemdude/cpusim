@@ -31,16 +31,38 @@ from cpusim.frontend.gui.frames import toolbar
 
 class GuiApp(tk.Tk, t.Generic[base.CpuT]):
     def __init__(
-        self, cpu: base.CpuT, debugger: runner.InteractiveDebugger[base.CpuT], *args: t.Any, **kwargs: t.Any
+        self,
+        mem: list[int],
+        cpu: type[base.CpuT],
+        debugger: type[runner.InteractiveDebugger[base.CpuT]],
+        *args: t.Any,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(*args, **kwargs)
-
-        self.state = base.AppState(cpu, debugger, False)
 
         self.title("CPUSim GUI v0")
         self.geometry("1200x800")
 
-        self._toolbar_frame = toolbar.ToolbarFrame(self, self.state, self.refresh)
+        self.mem: list[int]
+        self.state: base.AppState[base.CpuT]
+
+        self._toolbar_frame: base.AppFrame[base.CpuT]
+
+        self._mem_register_frame: tk.Frame
+        self._memory_frame: base.AppFrame[base.CpuT]
+        self._registers_frame: base.AppFrame[base.CpuT]
+
+        self._bp_flag_frame: tk.Frame
+        self._breakpoints_frame: base.AppFrame[base.CpuT]
+        self._flags_frame: base.AppFrame[base.CpuT]
+
+        self.init(mem, cpu, debugger)
+
+    def init(self, mem: list[int], cpu: type[base.CpuT], debugger: type[runner.InteractiveDebugger[base.CpuT]]) -> None:
+        self.mem = mem
+        self.state = base.AppState((c := cpu(mem)), debugger(c), False)
+
+        self._toolbar_frame = toolbar.ToolbarFrame(self, self.state, self.reset, self.refresh)
         self._toolbar_frame.pack(fill=tk.X, padx=5, pady=5)
 
         self._mem_register_frame = tk.Frame(self)
@@ -55,11 +77,19 @@ class GuiApp(tk.Tk, t.Generic[base.CpuT]):
         self._bp_flag_frame = tk.Frame(self)
         self._bp_flag_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        self._breakpoints_frame = breakpoints.BreakpointsFrame(self._bp_flag_frame)
+        self._breakpoints_frame = breakpoints.BreakpointsFrame(self._bp_flag_frame, self.state)
         self._breakpoints_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         self._flags_frame = flags.FlagsFrame(self._bp_flag_frame, self.state)
         self._flags_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    def reset(self) -> None:
+        self._toolbar_frame.destroy()
+        self._mem_register_frame.destroy()
+        self._bp_flag_frame.destroy()
+
+        self.init(self.mem, self.state.cpu.__class__, self.state.debugger.__class__)  # type: ignore[reportArgumentType]
+        self.refresh()
 
     def refresh(self) -> None:
         self._memory_frame.refresh()

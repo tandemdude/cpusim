@@ -33,11 +33,7 @@ if t.TYPE_CHECKING:
 
 def run_gui(args: CliArguments, mem: list[int]) -> None:
     if args.arch == "1a":
-        cpu = simulators.CPU1a(mem)
-        debugger = runner.CPU1aInteractiveDebugger(cpu)
-        app.GuiApp(cpu, debugger).run()
+        app.GuiApp(mem, simulators.CPU1a, runner.CPU1aInteractiveDebugger).run()
         return
 
-    cpu = simulators.CPU1d(mem)
-    debugger = runner.CPU1dInteractiveDebugger(cpu)
-    app.GuiApp(cpu, debugger).run()
+    app.GuiApp(mem, simulators.CPU1d, runner.CPU1dInteractiveDebugger).run()

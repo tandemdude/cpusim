@@ -36,13 +36,13 @@ CpuT = t.TypeVar("CpuT", simulators.CPU1a, simulators.CPU1d)
 
 @dataclasses.dataclass(slots=True)
 class LineBreakpoint:
-    line: int
+    value: int
     enabled: bool
 
 
 @dataclasses.dataclass(slots=True)
 class ConditionalBreakpoint:
-    expr: str
+    value: str
     enabled: bool
 
 
@@ -63,7 +63,7 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
             if not bp.enabled:
                 continue
 
-            if self._cpu.pc.value == bp.line:
+            if self._cpu.pc.value == bp.value:
                 return True, id
 
         context = self._conditional_breakpoint_context()
@@ -71,7 +71,7 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
             if not bp.enabled:
                 continue
 
-            if eval(bp.expr, context):
+            if eval(bp.value, context):
                 return True, id
 
         return False, -1
@@ -161,14 +161,7 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
     def info_breakpoints(self) -> str:
         rows: list[tuple[str, str, str, str]] = [("ID", "Type", "Enabled", "Value")]
         for id, bp in sorted([*self._lineno_breakpoints.items(), *self._conditional_breakpoints.items()]):
-            rows.append(
-                (
-                    str(id),
-                    "LINE" if isinstance(bp, LineBreakpoint) else "COND",
-                    str(bp.enabled),
-                    str(bp.line) if isinstance(bp, LineBreakpoint) else bp.expr,
-                )
-            )
+            rows.append((str(id), "LINE" if isinstance(bp, LineBreakpoint) else "COND", str(bp.enabled), str(bp.value)))
 
         return self._justify_rows(rows)
 
@@ -236,6 +229,7 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
         expr: list[str] | None = None,
         line: int | None = None,
         bp_id: int | None = None,
+        error_if_invalid: bool = False,
     ) -> str:
         if bp_id is not None and bp_id not in self._lineno_breakpoints and bp_id not in self._conditional_breakpoints:
             return f"No breakpoint with ID {bp_id} exists."
@@ -245,9 +239,11 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
                 bp_expr = "".join(expr)
 
                 try:
-                    compile(bp_expr, "<string>", "eval")
-                except SyntaxError as e:
-                    return f"Invalid expression syntax:\n{traceback.format_exception(e, limit=0)}"
+                    eval(bp_expr, self._conditional_breakpoint_context())
+                except Exception as e:
+                    if error_if_invalid:
+                        raise e
+                    return f"Expression validation failed:\n{traceback.format_exception(e, limit=0)}"
 
                 self._conditional_breakpoints[self._next_breakpoint_id] = ConditionalBreakpoint(bp_expr, True)
             elif line is not None:

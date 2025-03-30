@@ -43,5 +43,5 @@ class AppFrame(tk.LabelFrame, t.Generic[CpuT], abc.ABC):
         super().__init__(master, **kwargs)
         self.state = state
 
-    @abc.abstractmethod
-    def refresh(self) -> None: ...
+    def refresh(self) -> None:
+        pass

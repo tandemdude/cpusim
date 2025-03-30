@@ -37,13 +37,16 @@ class FlagsFrame(base.AppFrame[base.CpuT]):
             "zero": tk.IntVar(),
         }
 
-        tk.Label(self, text="Name", relief=tk.RIDGE, width=12).grid(row=0, column=0)
-        tk.Label(self, text="Value", relief=tk.RIDGE, width=12).grid(row=0, column=1)
+        self._frame = tk.Frame(self)
+        self._frame.pack(padx=5, pady=5)
+
+        tk.Label(self._frame, text="Name", relief=tk.RIDGE, width=12).grid(row=0, column=0)
+        tk.Label(self._frame, text="Value", relief=tk.RIDGE, width=12).grid(row=0, column=1)
 
         for i, name in enumerate(self.vars):
-            tk.Label(self, text=name, relief=tk.RIDGE, width=12).grid(row=i + 1, column=0)
+            tk.Label(self._frame, text=name, relief=tk.FLAT, width=12).grid(row=i + 1, column=0)
             tk.Checkbutton(
-                self,
+                self._frame,
                 variable=self.vars[name],
                 onvalue=1,
                 offvalue=0,
