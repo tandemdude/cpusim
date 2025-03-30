@@ -21,9 +21,4 @@ from cpusim.backend.components.alu import *
 from cpusim.backend.components.memory import *
 from cpusim.backend.components.registers import *
 
-__all__ = [
-    "ALU",
-    "IntRegister",
-    "Memory",
-    "Registers",
-]
+__all__ = ["ALU", "IntRegister", "Memory", "Registers"]

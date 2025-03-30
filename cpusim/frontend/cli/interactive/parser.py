@@ -28,12 +28,7 @@ from cpusim.frontend.cli.interactive import converters
 
 
 def _default_parser_args(description: str) -> dict[str, t.Any]:
-    return {
-        "help": description,
-        "description": description,
-        "exit_on_error": False,
-        "add_help": False,
-    }
+    return {"help": description, "description": description, "exit_on_error": False, "add_help": False}
 
 
 class _CustomHelpAction(argparse.Action):

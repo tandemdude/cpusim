@@ -29,10 +29,7 @@ root_subparsers = root_parser.add_subparsers(dest="command")
 
 root_parser.add_argument("file", action="store", metavar="FILE", help="the .dat file to simulate")
 
-cli_parser = root_subparsers.add_parser(
-    "cli",
-    help="simulate a .dat file in CLI mode",
-)
+cli_parser = root_subparsers.add_parser("cli", help="simulate a .dat file in CLI mode")
 cli_parser.add_argument(
     "--arch",
     "-a",
@@ -44,12 +41,7 @@ cli_parser.add_argument(
 
 grp = cli_parser.add_mutually_exclusive_group(required=True)
 grp.add_argument(
-    "--steps",
-    "-s",
-    action="store",
-    type=int,
-    metavar="N",
-    help="the number of steps (instructions) to simulate",
+    "--steps", "-s", action="store", type=int, metavar="N", help="the number of steps (instructions) to simulate"
 )
 grp.add_argument(
     "--interactive",
@@ -58,10 +50,7 @@ grp.add_argument(
     help="run in interactive mode - you will be able to run debug commands and step through instructions one-by-one",
 )
 
-gui_parser = root_subparsers.add_parser(
-    "gui",
-    help="simulate a .dat file in GUI mode",
-)
+gui_parser = root_subparsers.add_parser("gui", help="simulate a .dat file in GUI mode")
 gui_parser.add_argument(
     "--arch",
     "-a",

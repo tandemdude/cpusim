@@ -18,7 +18,7 @@ gui = []
 dev = ["nox==2025.2.9"]
 "dev.format" = ["ruff==0.11.2"]
 "dev.typecheck" = [
-    "pyright==1.1.397",
+    "pyright==1.1.398",
     "typing-extensions>=4.12.2, <5",
 ]
 "dev.slotscheck" = ["slotscheck>=0.19.0, <1"]
@@ -74,6 +74,10 @@ ignore = [
     "D205",   # 1 blank line required between summary line and description
 ]
 
+[tool.ruff.format]
+line-ending = "lf"
+skip-magic-trailing-comma = true
+
 [tool.ruff.lint.isort]
 force-single-line = true
 
@@ -115,7 +119,7 @@ reportIncompatibleMethodOverride = "none"  # This relies on ordering for keyword
 reportOverlappingOverload = "none" # Type-Vars in last overloads may interfere
 reportIncompatibleVariableOverride = "none" # Cannot overwrite abstract properties using attrs
 reportPrivateUsage = "none" # Too annoying
-reportUnknownMemberType = "warning" # NetworkX is untyped :/
+reportUnknownMemberType = "warning"
 
 [tool.pytest.ini_options]
 filterwarnings = [

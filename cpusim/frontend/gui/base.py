@@ -39,7 +39,7 @@ class AppState(t.Generic[CpuT]):
 
 
 class AppFrame(tk.LabelFrame, t.Generic[CpuT], abc.ABC):
-    def __init__(self, master: tk.Frame | tk.Tk, state: AppState[CpuT], **kwargs) -> None:
+    def __init__(self, master: tk.Frame | tk.Tk, state: AppState[CpuT], **kwargs: t.Any) -> None:
         super().__init__(master, **kwargs)
         self.state = state
 

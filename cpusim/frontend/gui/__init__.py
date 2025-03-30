@@ -32,7 +32,12 @@ if t.TYPE_CHECKING:
 
 
 def run_gui(args: CliArguments, mem: list[int]) -> None:
-    cpu = simulators.CPU1a(mem) if args.arch == "1a" else simulators.CPU1d(mem)
-    debugger = runner.CPU1aInteractiveDebugger(cpu) if args.arch == "1a" else runner.CPU1dInteractiveDebugger(cpu)
+    if args.arch == "1a":
+        cpu = simulators.CPU1a(mem)
+        debugger = runner.CPU1aInteractiveDebugger(cpu)
+        app.GuiApp(cpu, debugger).run()
+        return
 
-    app.GuiApp(cpu, debugger).run()  # type: ignore[reportArgumentType]
+    cpu = simulators.CPU1d(mem)
+    debugger = runner.CPU1dInteractiveDebugger(cpu)
+    app.GuiApp(cpu, debugger).run()

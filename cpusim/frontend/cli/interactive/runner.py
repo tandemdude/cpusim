@@ -361,13 +361,7 @@ class CPU1aInteractiveDebugger(InteractiveDebugger[simulators.CPU1a]):
     __slots__ = ()
 
     def info_registers(self) -> str:
-        return super()._info_registers(
-            {
-                "pc": self._cpu.pc.value,
-                "ir": self._cpu.ir.value,
-                "acc": self._cpu.acc.value,
-            }
-        )
+        return super()._info_registers({"pc": self._cpu.pc.value, "ir": self._cpu.ir.value, "acc": self._cpu.acc.value})
 
     def _conditional_breakpoint_context(self) -> dict[str, t.Any]:
         return {
@@ -383,21 +377,14 @@ class CPU1dInteractiveDebugger(InteractiveDebugger[simulators.CPU1d]):
     __slots__ = ()
 
     def info_registers(self) -> str:
-        registers: dict[str, t.Any] = {
-            "pc": self._cpu.pc.value,
-            "ir": self._cpu.ir.value,
-        }
+        registers: dict[str, t.Any] = {"pc": self._cpu.pc.value, "ir": self._cpu.ir.value}
         for i in range(self._cpu.registers._register_limit):
             registers[f"r{chr(ord('a') + i)}"] = self._cpu.registers.get(i).unsigned_value
 
         return self._info_registers(registers)
 
     def _conditional_breakpoint_context(self) -> dict[str, t.Any]:
-        out: dict[str, t.Any] = {
-            "pc": self._cpu.pc.value,
-            "ir": self._cpu.ir.value,
-            "mem": self._cpu.memory,
-        }
+        out: dict[str, t.Any] = {"pc": self._cpu.pc.value, "ir": self._cpu.ir.value, "mem": self._cpu.memory}
         for i in range(self._cpu.registers._register_limit):
             out[f"r{chr(ord('a') + i)}"] = self._cpu.registers.get(i)
 

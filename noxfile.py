@@ -25,11 +25,7 @@ from collections.abc import Callable
 import nox
 from nox import options
 
-SCRIPT_PATHS = [
-    os.path.join(".", "cpusim"),
-    os.path.join(".", "tests"),
-    "noxfile.py",
-]
+SCRIPT_PATHS = [os.path.join(".", "cpusim"), os.path.join(".", "tests"), "noxfile.py"]
 
 options.sessions = ["format_fix", "typecheck", "slotscheck", "test"]
 

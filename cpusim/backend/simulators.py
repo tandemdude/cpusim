@@ -71,10 +71,7 @@ class CPU(abc.ABC, t.Generic[InstructionT]):
 
 
 class CPU1a(CPU[base.Instruction1a]):
-    __slots__ = (
-        "acc",
-        "alu",
-    )
+    __slots__ = ("acc", "alu")
 
     INSTRUCTION_SET = instruction_sets.INSTRUCTION_SET_1A
 
@@ -106,10 +103,7 @@ class CPU1a(CPU[base.Instruction1a]):
 
 
 class CPU1d(CPU[base.Instruction1d]):
-    __slots__ = (
-        "alu",
-        "registers",
-    )
+    __slots__ = ("alu", "registers")
 
     INSTRUCTION_SET = instruction_sets.INSTRUCTION_SET_1D
 

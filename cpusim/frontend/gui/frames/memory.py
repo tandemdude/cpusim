@@ -44,7 +44,7 @@ class MemoryFrame(base.AppFrame[base.CpuT]):
             self._tree.heading(col, text=col)
             self._tree.column(col, width=15)
 
-        self._scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self._tree.yview)
+        self._scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self._tree.yview)  # type: ignore
         self._tree.configure(yscrollcommand=self._scrollbar.set)
         self._scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self._tree.pack(fill=tk.BOTH, expand=True)
@@ -57,16 +57,16 @@ class MemoryFrame(base.AppFrame[base.CpuT]):
 
         self.refresh()
 
-    def _monkeypatched_memory_set(self, addr: int, val: Int16) -> None:
-        self._written_rows.append(addr)
-        self._old_memory_set(addr, val)
+    def _monkeypatched_memory_set(self, address: int, value: Int16) -> None:
+        self._written_rows.append(address)
+        self._old_memory_set(address, value)
 
     def on_cell_edit(self, iid: str, new_val: str) -> None:
         # check if valid hex
         try:
             new_int_val = int(new_val.lower().strip("0x"), 16)
         except ValueError:
-            messagebox.showerror("Invalid hex value", f"{new_val!r} is not a valid hex number")
+            messagebox.showerror("Invalid hex value", f"{new_val!r} is not a valid hex number")  # pyright: ignore[reportUnknownMemberType]
             return
 
         memory_addr = int(iid.strip("mem_0x"), 16)

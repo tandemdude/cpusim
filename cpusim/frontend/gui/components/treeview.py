@@ -26,7 +26,7 @@ from tkinter import ttk
 
 class EntryPopup(ttk.Entry):
     def __init__(self, parent: EditableTreeView, iid: str, text: str, **kwargs: t.Any) -> None:
-        ttk.Style().configure("pad.TEntry", padding="1 1 1 1")
+        ttk.Style().configure("pad.TEntry", padding="1 1 1 1")  # pyright: ignore[reportUnknownMemberType]
         super().__init__(parent, style="pad.TEntry", **kwargs)
 
         self._parent = parent
@@ -38,8 +38,8 @@ class EntryPopup(ttk.Entry):
         self.focus_force()
         self.select_all()
         self.bind("<Return>", self.on_return)
-        self.bind("<Control-a>", lambda *_: self.select_all())
-        self.bind("<Escape>", lambda *_: self.destroy())
+        self.bind("<Control-a>", lambda _: self.select_all())
+        self.bind("<Escape>", lambda _: self.destroy())
 
     def on_return(self, _: tk.Event[t.Any]) -> None:
         self._parent.on_edit_fn(self._iid, self.get())
@@ -57,7 +57,7 @@ class EditableTreeView(ttk.Treeview):
         col_idx: int,
         on_edit_fn: t.Callable[[str, str], None],
         *args: t.Any,
-        exclude_iids: tuple[str] = (),
+        exclude_iids: tuple[str, ...] = (),
         **kwargs: t.Any,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -86,7 +86,12 @@ class EditableTreeView(ttk.Treeview):
         if not rowid:
             return
 
-        x, y, width, height = self.bbox(rowid, column)
+        bbox = self.bbox(rowid, column)
+
+        # I have no clue who though it was a good idea to return an empty string instead of just None
+        assert bbox != "", "How did you manage to click on an item that is scolled out of view?"
+
+        x, y, width, height = bbox
         pady = height // 2
 
         self._entry_popup = EntryPopup(self, rowid, self.item(rowid, "values")[self.col_idx])

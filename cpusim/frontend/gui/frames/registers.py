@@ -71,17 +71,19 @@ class RegistersFrame(base.AppFrame[base.CpuT]):
         try:
             parsed_val = int(new_val.lower().strip("0x"), 16)
         except ValueError:
-            messagebox.showerror("Invalid hex value", f"{new_val!r} is not a valid hex number")
+            messagebox.showerror("Invalid hex value", f"{new_val!r} is not a valid hex number")  # pyright: ignore[reportUnknownMemberType]
             return
 
         if iid == "pc":
-            self.state.cpu.pc.set(Int16(parsed_val))
+            self.state.cpu.pc.set(Int16(parsed_val).unsigned_value)
         elif iid == "ir":
-            self.state.cpu.ir.set(Int16(parsed_val))
+            self.state.cpu.ir.set(Int16(parsed_val).unsigned_value)
         elif iid == "acc":
+            assert isinstance(self.state.cpu, simulators.CPU1a)
             self.state.cpu.acc.set(Int8(parsed_val).unsigned_value)
         else:
             # set general purpose registers
+            assert isinstance(self.state.cpu, simulators.CPU1d)
             self.state.cpu.registers.set(ord(iid[1]) - ord("a"), Int16(parsed_val))
 
         self.refresh()
