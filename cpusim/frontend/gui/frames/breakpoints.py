@@ -53,22 +53,15 @@ class BreakpointsFrame(base.AppFrame[base.CpuT]):
         self._value_entry = tk.Entry(self._create_bp_frame)
         self._value_entry.grid(row=0, column=3, padx=5, pady=5)
 
-        self._create_btn = tk.Button(self._create_bp_frame, text="Create", command=self.create_breakpoint)
+        self._create_btn = tk.Button(self._create_bp_frame, text="+", fg="green", command=self._create_breakpoint)
         self._create_btn.grid(row=0, column=4, padx=5, pady=5)
 
-        self._breakpoints_table = tk.Frame(self)
-        self._breakpoints_table.pack(padx=5, pady=5)
-
-        tk.Label(self._breakpoints_table, text="ID", relief=tk.RIDGE, width=12).grid(row=0, column=0)
-        tk.Label(self._breakpoints_table, text="Type", relief=tk.RIDGE, width=12).grid(row=0, column=1)
-        tk.Label(self._breakpoints_table, text="Value", relief=tk.RIDGE, width=12).grid(row=0, column=2)
-        tk.Label(self._breakpoints_table, text="Enabled", relief=tk.RIDGE, width=12).grid(row=0, column=3)
-
+        self._breakpoints_table: tk.Frame | None = None
         self._vars: dict[int, tk.IntVar] = collections.defaultdict(tk.IntVar)
 
         self.refresh()
 
-    def create_breakpoint(self) -> None:
+    def _create_breakpoint(self) -> None:
         raw = self._value_entry.get()
         if self._type_var.get() == "LINE":
             try:
@@ -88,19 +81,50 @@ class BreakpointsFrame(base.AppFrame[base.CpuT]):
 
         self.refresh()
 
+    def _delete_breakpoint(self, id_: int) -> None:
+        self.state.debugger._lineno_breakpoints.pop(id_, None)
+        self.state.debugger._conditional_breakpoints.pop(id_, None)
+        self._vars.pop(id_, None)
+
+        self.refresh()
+
     def _on_toggle(self, id_: int) -> None:
         if (bp := self.state.debugger._lineno_breakpoints.get(id_)) is not None or (
             bp := self.state.debugger._conditional_breakpoints.get(id_)
         ) is not None:
             bp.enabled = not bp.enabled
 
+    def _build_breakpoint_table_header(self) -> None:
+        if self._breakpoints_table is not None:
+            self._breakpoints_table.destroy()
+
+        self._breakpoints_table = tk.Frame(self)
+        self._breakpoints_table.pack(padx=5, pady=5)
+
+        tk.Label(self._breakpoints_table, text="ID", relief=tk.RIDGE, width=12).grid(row=0, column=0)
+        tk.Label(self._breakpoints_table, text="Type", relief=tk.RIDGE, width=12).grid(row=0, column=1)
+        tk.Label(self._breakpoints_table, text="Value", relief=tk.RIDGE, width=12).grid(row=0, column=2)
+        tk.Label(self._breakpoints_table, text="Enabled", relief=tk.RIDGE, width=12).grid(row=0, column=3)
+        tk.Label(self._breakpoints_table, text="Delete", relief=tk.RIDGE, width=12).grid(row=0, column=4)
+
     def refresh(self) -> None:
+        self._build_breakpoint_table_header()
+        assert self._breakpoints_table is not None
+
         all_breakpoints = [
             *self.state.debugger._lineno_breakpoints.items(),
             *self.state.debugger._conditional_breakpoints.items(),
         ]
         for i, elem in enumerate(sorted(all_breakpoints, key=lambda e: e[0])):
-            tk.Label(self._breakpoints_table, text=str(elem[0]), relief=tk.FLAT, width=12).grid(row=i + 1, column=0)
+            tk.Label(
+                self._breakpoints_table,
+                text=str(elem[0]),
+                relief=tk.FLAT,
+                width=12,
+                background="yellow"
+                if str(elem[0]) == self.state.breakpoint_var.get()
+                else self._breakpoints_table.cget("background"),
+            ).grid(row=i + 1, column=0)
             tk.Label(
                 self._breakpoints_table,
                 text="LINE" if isinstance(elem[1], runner.LineBreakpoint) else "COND",
@@ -120,3 +144,10 @@ class BreakpointsFrame(base.AppFrame[base.CpuT]):
                 offvalue=0,
                 command=functools.partial(self._on_toggle, id_=elem[0]),
             ).grid(row=i + 1, column=3)
+
+            tk.Button(
+                self._breakpoints_table,
+                text="X",
+                fg="red",
+                command=functools.partial(self._delete_breakpoint, id_=elem[0]),
+            ).grid(row=i + 1, column=4)

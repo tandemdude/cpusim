@@ -120,7 +120,11 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
             value = self._cpu.memory.get(addr)
 
             self._cpu.ir.set(value.unsigned_value)
-            instruction, args = self._cpu.decode()
+            try:
+                instruction, args = self._cpu.decode()
+                instruction_repr = instruction.repr(args)
+            except NotImplementedError:
+                instruction_repr = "????"
 
             rows.append(
                 (
@@ -128,7 +132,7 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
                     str(Int8(value.unsigned_value).signed_value),
                     str(value.signed_value),
                     hex(value.unsigned_value),
-                    instruction.repr(args),
+                    instruction_repr,
                     value.unsigned_value == 0,
                 )
             )
@@ -306,6 +310,18 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
         )
         return "\n".join(out)
 
+    def set(self, target: converters.Address | converters.Register, value: int) -> str:
+        if isinstance(target, converters.Address):
+            self._cpu.memory.set(target.value, Int16(value))
+            return f"Set value at address {hex(target.value)} to {hex(value)}"
+
+        if target.attr_name == "registers":
+            getattr(self._cpu, target.attr_name).set(target.id, Int16(value))
+        else:
+            getattr(self._cpu, target.attr_name).set(value)
+
+        return f"Set register {target.register_name} to {hex(value)}"
+
     def execute_command(self, raw_command: str) -> str | None:
         try:
             arguments = parser.parse_args(shlex.split(raw_command.lower()))
@@ -349,6 +365,10 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
             case "print":
                 assert arguments.target is not None
                 return self.print(arguments.target)
+            case "set":
+                assert arguments.target is not None
+                assert arguments.value is not None
+                return self.set(arguments.target, arguments.value)
 
         return None
 

@@ -149,10 +149,21 @@ print_parser.add_argument(
     "target", metavar="TARGET", type=converters.parse_address_or_register, help="Target address or register"
 )
 
+# set command
+set_parser = subparsers.add_parser("set", **_default_parser_args("Set the value at the given address/register"))
+_CustomHelpAction.add_to(set_parser)
+
+set_parser.add_argument(
+    "target", metavar="TARGET", type=converters.parse_address_or_register, help="Target address or register"
+)
+set_parser.add_argument(
+    "value", metavar="VALUE", type=converters.number_string_to_int, help="New value for the address/register"
+)
+
 
 class Arguments(argparse.Namespace):
     help: bool | None
-    command: t.Literal["quit", "info", "step", "continue", "breakpoint", "disassemble", "print"] | None
+    command: t.Literal["quit", "info", "step", "continue", "breakpoint", "disassemble", "print", "set"] | None
     item: t.Literal["registers", "breakpoints", "memory", "flags"] | None
     number: int | None
     breakpoint_subcommand: t.Literal["create", "delete", "enable", "disable"] | None
@@ -160,6 +171,7 @@ class Arguments(argparse.Namespace):
     breakpoint_create_line: int | None
     id: int | None
     target: converters.Address | converters.Register | None
+    value: int | None
 
 
 def parse_args(args: list[str]) -> Arguments:
