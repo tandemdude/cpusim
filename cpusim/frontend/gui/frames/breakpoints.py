@@ -67,14 +67,14 @@ class BreakpointsFrame(base.AppFrame[base.CpuT]):
             try:
                 value = converters.number_string_to_int(raw)
             except ValueError:
-                messagebox.showerror("Parsing Error", f"{raw} cannot be parsed to hex, binary, or decimal integer")
+                messagebox.showerror("Parsing Error", f"{raw} cannot be parsed to hex, binary, or decimal integer")  # type: ignore[reportUnknownMemberType]
                 return
             self.state.debugger.breakpoint("create", line=value)
         else:
             try:
                 self.state.debugger.breakpoint("create", expr=[raw], error_if_invalid=True)
             except Exception as e:
-                messagebox.showerror("Expression Error", "\n".join(traceback.format_exception(e, limit=0)))
+                messagebox.showerror("Expression Error", "\n".join(traceback.format_exception(e, limit=0)))  # type: ignore[reportUnknownMemberType]
                 return
 
         self._value_entry.delete(0, "end")

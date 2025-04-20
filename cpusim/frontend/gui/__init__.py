@@ -21,19 +21,36 @@ from __future__ import annotations
 
 __all__ = ["run_gui"]
 
+import functools
 import typing as t
 
 from cpusim.backend import simulators
+from cpusim.backend.peripherals import gpio
 from cpusim.frontend.cli.interactive import runner
 from cpusim.frontend.gui import app
+from cpusim.frontend.gui import base
 
 if t.TYPE_CHECKING:
     from cpusim.__main__ import CliArguments
 
 
+def _noop(cpu: base.CpuT) -> base.CpuT:
+    return cpu
+
+
+def _enable_bug_trap(cpu: base.CpuT, addr: int) -> base.CpuT:
+    cpu.gpio = gpio.GPIO(cpu, gpio.GPIOConfig(2, addr))
+    cpu.gpio.set_device(0, gpio.BugTrap())
+    return cpu
+
+
 def run_gui(args: CliArguments, mem: list[int]) -> None:
+    cpu_configurer = _noop
+    if args.bug_trap is not None:
+        cpu_configurer = functools.partial(_enable_bug_trap, addr=args.bug_trap[0])
+
     if args.arch == "1a":
-        app.GuiApp(mem, simulators.CPU1a, runner.CPU1aInteractiveDebugger).run()
+        app.GuiApp(mem, simulators.CPU1a, cpu_configurer, runner.CPU1aInteractiveDebugger).run()
         return
 
-    app.GuiApp(mem, simulators.CPU1d, runner.CPU1dInteractiveDebugger).run()
+    app.GuiApp(mem, simulators.CPU1d, cpu_configurer, runner.CPU1dInteractiveDebugger).run()

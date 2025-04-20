@@ -23,6 +23,7 @@ import typing as t
 from cpusim.common import parser
 from cpusim.frontend import cli
 from cpusim.frontend import gui
+from cpusim.frontend.cli.interactive import converters
 
 root_parser = argparse.ArgumentParser()
 root_subparsers = root_parser.add_subparsers(dest="command")
@@ -37,6 +38,15 @@ cli_parser.add_argument(
     choices=["1a", "1d"],
     help="the SimpleCPU architecture version to use - defaults to '1a'",
     default="1a",
+)
+cli_parser.add_argument(
+    "--bug-trap",
+    dest="bug_trap",
+    nargs=1,
+    default=None,
+    type=lambda arg: 0xFC if arg.lower() == "true" else converters.number_string_to_int(arg),
+    help="enable the bug trap hardware - pass 'true' to enable, or a number to map to a "
+    "specific memory address. if 'true' is passed, the address is set to '0xFC'. ",
 )
 
 grp = cli_parser.add_mutually_exclusive_group(required=True)
@@ -59,6 +69,15 @@ gui_parser.add_argument(
     help="the SimpleCPU architecture version to use - defaults to '1a'",
     default="1a",
 )
+gui_parser.add_argument(
+    "--bug-trap",
+    dest="bug_trap",
+    nargs=1,
+    default=None,
+    type=lambda arg: 0xFC if arg.lower() == "true" else converters.number_string_to_int(arg),
+    help="enable the bug trap hardware - pass 'true' to enable, or a number to map to a "
+    "specific memory address. if 'true' is passed, the address is set to '0xFC'. ",
+)
 
 
 class CliArguments(argparse.Namespace):
@@ -67,6 +86,7 @@ class CliArguments(argparse.Namespace):
     arch: t.Literal["1a", "1d"] | None
     steps: int | None
     interactive: bool
+    bug_trap: tuple[int] | None
 
 
 args = root_parser.parse_args(namespace=CliArguments())

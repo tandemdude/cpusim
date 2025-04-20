@@ -17,6 +17,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
+
 import abc
 import typing as t
 
@@ -26,16 +28,21 @@ from cpusim.common.instructions import base
 from cpusim.common.instructions.v1a import primary as primary_1a
 from cpusim.common.instructions.v1d import primary as primary_1d
 
+if t.TYPE_CHECKING:
+    from cpusim.backend.peripherals import gpio
+
 InstructionT = t.TypeVar("InstructionT", base.Instruction1a, base.Instruction1d)
 
 
 class CPU(abc.ABC, t.Generic[InstructionT]):
-    __slots__ = ("ir", "memory", "pc")
+    __slots__ = ("gpio", "ir", "memory", "pc")
 
     def __init__(self, mem: list[int] | None = None, max_mem: int = 4096) -> None:
         self.pc = components.IntRegister()
         self.ir = components.IntRegister()
         self.memory = components.Memory(mem or [], max_mem)
+
+        self.gpio: gpio.GPIO | None = None
 
     @property
     @abc.abstractmethod

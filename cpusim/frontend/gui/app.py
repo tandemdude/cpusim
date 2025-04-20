@@ -27,6 +27,7 @@ from cpusim.frontend.gui.frames import flags
 from cpusim.frontend.gui.frames import memory
 from cpusim.frontend.gui.frames import registers
 from cpusim.frontend.gui.frames import toolbar
+from cpusim.frontend.gui.frames.peripherals import bug_trap
 
 
 class GuiApp(tk.Tk, t.Generic[base.CpuT]):
@@ -34,11 +35,14 @@ class GuiApp(tk.Tk, t.Generic[base.CpuT]):
         self,
         mem: list[int],
         cpu: type[base.CpuT],
+        cpu_configurer: t.Callable[[base.CpuT], base.CpuT],
         debugger: type[runner.InteractiveDebugger[base.CpuT]],
         *args: t.Any,
         **kwargs: t.Any,
     ) -> None:
         super().__init__(*args, **kwargs)
+
+        self._cpu_configurer = cpu_configurer
 
         self.title("CPUSim GUI v0")
         self.geometry("1200x800")
@@ -56,11 +60,13 @@ class GuiApp(tk.Tk, t.Generic[base.CpuT]):
         self._breakpoints_frame: base.AppFrame[base.CpuT]
         self._flags_frame: base.AppFrame[base.CpuT]
 
+        self._bug_trap_window: bug_trap.BugTrapSimulatorWindow[base.CpuT] | None
+
         self.init(mem, cpu, debugger)
 
     def init(self, mem: list[int], cpu: type[base.CpuT], debugger: type[runner.InteractiveDebugger[base.CpuT]]) -> None:
         self.mem = mem
-        self.state = base.AppState((c := cpu(mem)), debugger(c), False)
+        self.state = base.AppState((c := self._cpu_configurer(cpu(mem))), debugger(c), False)
 
         self._toolbar_frame = toolbar.ToolbarFrame(self, self.state, self.reset, self.refresh)
         self._toolbar_frame.pack(fill=tk.X, padx=5, pady=5)
@@ -83,10 +89,17 @@ class GuiApp(tk.Tk, t.Generic[base.CpuT]):
         self._flags_frame = flags.FlagsFrame(self._bp_flag_frame, self.state)
         self._flags_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        self._bug_trap_window = (
+            bug_trap.BugTrapSimulatorWindow(self, self.state) if self.state.cpu.gpio is not None else None
+        )
+
     def reset(self) -> None:
         self._toolbar_frame.destroy()
         self._mem_register_frame.destroy()
         self._bp_flag_frame.destroy()
+
+        if self._bug_trap_window is not None:
+            self._bug_trap_window.destroy()
 
         self.init(self.mem, self.state.cpu.__class__, self.state.debugger.__class__)  # type: ignore[reportArgumentType]
         self.refresh()
@@ -96,6 +109,9 @@ class GuiApp(tk.Tk, t.Generic[base.CpuT]):
         self._registers_frame.refresh()
         self._breakpoints_frame.refresh()
         self._flags_frame.refresh()
+
+        if self._bug_trap_window is not None:
+            self._bug_trap_window.refresh()
 
     def run(self) -> None:
         self.mainloop()

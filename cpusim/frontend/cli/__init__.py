@@ -24,6 +24,7 @@ __all__ = ["run_cli"]
 import typing as t
 
 from cpusim.backend import simulators
+from cpusim.backend.peripherals import gpio
 from cpusim.frontend.cli.interactive import runner
 
 if t.TYPE_CHECKING:
@@ -32,6 +33,10 @@ if t.TYPE_CHECKING:
 
 def run_cli(args: CliArguments, mem: list[int]) -> None:
     cpu = simulators.CPU1a(mem) if args.arch == "1a" else simulators.CPU1d(mem)
+
+    if args.bug_trap is not None:
+        cpu.gpio = gpio.GPIO(cpu, gpio.GPIOConfig(2, args.bug_trap[0]))
+        cpu.gpio.set_device(0, gpio.BugTrap())
 
     debugger = runner.CPU1aInteractiveDebugger(cpu) if args.arch == "1a" else runner.CPU1dInteractiveDebugger(cpu)  # type: ignore[reportArgumentType]
     if not args.interactive:
