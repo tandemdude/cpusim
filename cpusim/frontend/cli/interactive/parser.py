@@ -71,7 +71,7 @@ info_parser.add_argument(
     "item",
     metavar="ITEM",
     type=str,
-    choices=["registers", "breakpoints", "memory", "flags"],
+    choices=["registers", "breakpoints", "memory", "flags", "bugtrap"],
     help="The item to show state for",
 )
 
@@ -164,7 +164,7 @@ set_parser.add_argument(
 class Arguments(argparse.Namespace):
     help: bool | None
     command: t.Literal["quit", "info", "step", "continue", "breakpoint", "disassemble", "print", "set"] | None
-    item: t.Literal["registers", "breakpoints", "memory", "flags"] | None
+    item: t.Literal["registers", "breakpoints", "memory", "flags", "bugtrap"] | None
     number: int | None
     breakpoint_subcommand: t.Literal["create", "delete", "enable", "disable"] | None
     breakpoint_create_expr: list[str] | None

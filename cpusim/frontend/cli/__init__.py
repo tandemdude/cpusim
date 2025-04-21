@@ -75,3 +75,7 @@ def run_cli(args: CliArguments, mem: list[int]) -> None:
     print(debugger.info_registers())
     print("\nFlags:")
     print(debugger.info_flags())
+
+    if cpu.gpio is not None:
+        print("\nBugTrap:")
+        print(debugger.info_bugtrap())

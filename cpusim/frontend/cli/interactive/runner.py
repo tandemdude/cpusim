@@ -26,6 +26,7 @@ from argparse import ArgumentError
 
 from cpusim.backend import components
 from cpusim.backend import simulators
+from cpusim.backend.peripherals import gpio
 from cpusim.common.types import Int8
 from cpusim.common.types import Int16
 from cpusim.frontend.cli.interactive import converters
@@ -176,6 +177,25 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
         for attr in flag_attrs:
             rows.append((attr, str(getattr(self._cpu.alu, attr))))
 
+        return self._justify_rows(rows)
+
+    def info_bugtrap(self) -> str:
+        if self._cpu.gpio is None:
+            return "Bug trap hardware not installed."
+
+        bugtrap = next((d for d in self._cpu.gpio._devices if isinstance(d, gpio.BugTrap)), None)
+        if bugtrap is None:
+            return "Bug trap hardware not installed."
+
+        rows: list[tuple[str, str]] = [
+            ("Name", "Value"),
+            ("Trap", "CLOSED" if bugtrap.trap_closed else "OPEN"),
+            ("LED", "ON" if bugtrap.led_on else "OFF"),
+            ("Mode", "MANUAL" if bugtrap.mode_switch_manual else "AUTO"),
+            ("Fire", "ON" if bugtrap.fire_button_pressed else "OFF"),
+            ("Sensor 1", "ON" if bugtrap.sensor_1_triggered else "OFF"),
+            ("Sensor 2", "ON" if bugtrap.sensor_2_triggered else "OFF"),
+        ]
         return self._justify_rows(rows)
 
     def step(self, n: int) -> str:
@@ -345,6 +365,8 @@ class InteractiveDebugger(abc.ABC, t.Generic[CpuT]):
                     return self.info_breakpoints()
                 elif arguments.item == "memory":
                     return self.info_memory()
+                elif arguments.item == "bugtrap":
+                    return self.info_bugtrap()
                 return self.info_flags()
             case "step":
                 assert arguments.number is not None
