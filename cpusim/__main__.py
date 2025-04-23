@@ -29,6 +29,17 @@ root_parser = argparse.ArgumentParser()
 root_subparsers = root_parser.add_subparsers(dest="command")
 
 root_parser.add_argument("file", action="store", metavar="FILE", help="the .dat file to simulate")
+root_parser.add_argument(
+    "--enable-bug-trap", action="store_true", dest="enable_bug_trap", help="enable bug trap hardware"
+)
+root_parser.add_argument(
+    "--bug-trap-address",
+    nargs="?",
+    dest="bug_trap_address",
+    default=0xFC,
+    type=converters.number_string_to_int,
+    help="memory address to map the bug trap hardware GPIO port to - defaults to 0xFC",
+)
 
 cli_parser = root_subparsers.add_parser("cli", help="simulate a .dat file in CLI mode")
 cli_parser.add_argument(
@@ -38,15 +49,6 @@ cli_parser.add_argument(
     choices=["1a", "1d"],
     help="the SimpleCPU architecture version to use - defaults to '1a'",
     default="1a",
-)
-cli_parser.add_argument(
-    "--bug-trap",
-    dest="bug_trap",
-    nargs=1,
-    default=None,
-    type=lambda arg: 0xFC if arg.lower() == "true" else converters.number_string_to_int(arg),
-    help="enable the bug trap hardware - pass 'true' to enable, or a number to map to a "
-    "specific memory address. if 'true' is passed, the address is set to '0xFC'. ",
 )
 
 grp = cli_parser.add_mutually_exclusive_group(required=True)
@@ -86,7 +88,8 @@ class CliArguments(argparse.Namespace):
     arch: t.Literal["1a", "1d"] | None
     steps: int | None
     interactive: bool
-    bug_trap: tuple[int] | None
+    enable_bug_trap: bool
+    bug_trap_address: int
 
 
 args = root_parser.parse_args(namespace=CliArguments())

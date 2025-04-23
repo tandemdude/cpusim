@@ -34,8 +34,8 @@ if t.TYPE_CHECKING:
 def run_cli(args: CliArguments, mem: list[int]) -> None:
     cpu = simulators.CPU1a(mem) if args.arch == "1a" else simulators.CPU1d(mem)
 
-    if args.bug_trap is not None:
-        cpu.gpio = gpio.GPIO(cpu, gpio.GPIOConfig(2, args.bug_trap[0]))
+    if args.enable_bug_trap:
+        cpu.gpio = gpio.GPIO(cpu, gpio.GPIOConfig(2, args.bug_trap_address))
         cpu.gpio.set_device(0, gpio.BugTrap())
 
     debugger = runner.CPU1aInteractiveDebugger(cpu) if args.arch == "1a" else runner.CPU1dInteractiveDebugger(cpu)  # type: ignore[reportArgumentType]

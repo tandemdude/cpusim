@@ -46,8 +46,8 @@ def _enable_bug_trap(cpu: base.CpuT, addr: int) -> base.CpuT:
 
 def run_gui(args: CliArguments, mem: list[int]) -> None:
     cpu_configurer = _noop
-    if args.bug_trap is not None:
-        cpu_configurer = functools.partial(_enable_bug_trap, addr=args.bug_trap[0])
+    if args.enable_bug_trap:
+        cpu_configurer = functools.partial(_enable_bug_trap, addr=args.bug_trap_address)
 
     if args.arch == "1a":
         app.GuiApp(mem, simulators.CPU1a, cpu_configurer, runner.CPU1aInteractiveDebugger).run()
