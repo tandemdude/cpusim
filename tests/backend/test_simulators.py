@@ -20,15 +20,15 @@
 from cpusim.backend import simulators
 
 
-def test_auto_halt_halts_correctly():
-    cpu = simulators.CPU1a([0x8000]) # JUMPU 0
+def test_auto_halt_halts_correctly() -> None:
+    cpu = simulators.CPU1a([0x8000])  # JUMPU 0
 
     halted = cpu.step()
     assert halted is True
 
 
-def test_auto_halt_does_not_halt_when_no_catch():
-    cpu = simulators.CPU1a([0x8001]) # JUMPU 1
+def test_auto_halt_does_not_halt_when_no_catch() -> None:
+    cpu = simulators.CPU1a([0x8001])  # JUMPU 1
 
     halted = cpu.step()
     assert halted is False
