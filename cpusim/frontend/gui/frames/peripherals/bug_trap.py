@@ -24,6 +24,7 @@ class BugTrapSimulatorWindow(tk.Toplevel, t.Generic[base.CpuT]):
         self._trap_state_label.pack(padx=5, pady=5)
         self._led_state_var = tk.StringVar(value="LED Off")
         self._led_state_label = tk.Label(trap_state_frame, textvariable=self._led_state_var, width=10, fg="black")
+        self._led_state_label.pack(padx=5, pady=5)
 
         sensor_frame = tk.LabelFrame(self, text="Sensors")
         sensor_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
